@@ -72,6 +72,7 @@ interface ChocoboStore {
   frozenFilteredIds: string[];
   pendingChangesWhileEditing: boolean;
   hasSeenInfo: boolean;
+  superSprint: boolean;
 
   // Actions
   addChocobo: (gender: ChocoboGender) => void;
@@ -89,6 +90,7 @@ interface ChocoboStore {
   setSortOrder: (sortOrder: SortOrder) => void;
   setEditMode: (isEditMode: boolean) => void;
   setHasSeenInfo: (hasSeen: boolean) => void;
+  setSuperSprint: (superSprint: boolean) => void;
   getFilteredChocobos: () => Chocobo[];
   getMaleChocobos: () => Chocobo[];
   getFemaleChocobos: () => Chocobo[];
@@ -162,6 +164,7 @@ export const useChocoboStore = create<ChocoboStore>()(
       frozenFilteredIds: [],
       pendingChangesWhileEditing: false,
       hasSeenInfo: false,
+      superSprint: false,
 
       addChocobo: (gender: ChocoboGender) => {
         const newChocobo = createDefaultChocobo(gender);
@@ -249,7 +252,7 @@ export const useChocoboStore = create<ChocoboStore>()(
             const femaleData = convertToParentDataParsed(female);
             
             // Use evaluateBreedingPair to get expected rank score (higher is better)
-            const score = evaluateBreedingPair(maleData, femaleData, false);
+            const score = evaluateBreedingPair(maleData, femaleData, get().superSprint);
             
             if (score > bestScore) {
               bestScore = score;
@@ -363,6 +366,10 @@ export const useChocoboStore = create<ChocoboStore>()(
 
       setHasSeenInfo: (hasSeen: boolean) => {
         set({ hasSeenInfo: hasSeen });
+      },
+
+      setSuperSprint: (superSprint: boolean) => {
+        set({ superSprint });
       },
 
       getFilteredChocobos: () => {

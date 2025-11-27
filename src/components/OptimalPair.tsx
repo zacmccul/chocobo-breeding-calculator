@@ -10,6 +10,7 @@ import {
   VStack,
   HStack,
   Badge,
+  Switch,
 } from "@chakra-ui/react";
 import { useChocoboStore } from "../store/chocoboStore";
 import type { Chocobo } from "../schemas/chocobo";
@@ -133,7 +134,7 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
 };
 
 export const OptimalPair: React.FC = () => {
-  const { optimalPair, findOptimalBreedingPair, getMaleChocobos, getFemaleChocobos } =
+  const { optimalPair, findOptimalBreedingPair, getMaleChocobos, getFemaleChocobos, superSprint, setSuperSprint } =
     useChocoboStore();
 
   const males = getMaleChocobos();
@@ -181,14 +182,35 @@ export const OptimalPair: React.FC = () => {
                 </GridItem>
               </Grid>
 
-              <Button
-                onClick={findOptimalBreedingPair}
-                colorScheme="green"
-                size="lg"
-                width="full"
-              >
-                Recalculate Optimal Pair
-              </Button>
+              <HStack justify="space-between" align="center" width="full">
+                <HStack>
+                  <Switch.Root
+                    checked={superSprint}
+                    onCheckedChange={() => setSuperSprint(!superSprint)}
+                    colorPalette="green"
+                    aria-label="Toggle Super Sprint"
+                  >
+                    <Switch.Control
+                      tabIndex={0}
+                      onClick={() => setSuperSprint(!superSprint)}
+                    >
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Switch.Label fontSize="sm" fontWeight="medium">
+                      Super Sprint
+                    </Switch.Label>
+                  </Switch.Root>
+                </HStack>
+                <Button
+                  onClick={findOptimalBreedingPair}
+                  colorScheme="green"
+                  size="lg"
+                  flex="1"
+                  ml={4}
+                >
+                  Recalculate Optimal Pair
+                </Button>
+              </HStack>
             </VStack>
           </Card.Root>
         ) : (
@@ -206,15 +228,36 @@ export const OptimalPair: React.FC = () => {
                 </Text>
               </Box>
 
-              <Button
-                onClick={findOptimalBreedingPair}
-                colorScheme="blue"
-                size="lg"
-                width="full"
-                disabled={!canCalculate}
-              >
-                Find Optimal Breeding Pair
-              </Button>
+              <HStack justify="space-between" align="center" width="full">
+                <HStack>
+                  <Switch.Root
+                    checked={superSprint}
+                    onCheckedChange={() => setSuperSprint(!superSprint)}
+                    colorPalette="blue"
+                    aria-label="Toggle Super Sprint"
+                  >
+                    <Switch.Control
+                      tabIndex={0}
+                      onClick={() => setSuperSprint(!superSprint)}
+                    >
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Switch.Label fontSize="sm" fontWeight="medium">
+                      Super Sprint
+                    </Switch.Label>
+                  </Switch.Root>
+                </HStack>
+                <Button
+                  onClick={findOptimalBreedingPair}
+                  colorScheme="blue"
+                  size="lg"
+                  disabled={!canCalculate}
+                  flex="1"
+                  ml={4}
+                >
+                  Find Optimal Breeding Pair
+                </Button>
+              </HStack>
             </VStack>
           </Card.Root>
         )}

@@ -236,8 +236,18 @@ export const InfoModal: React.FC<InfoModalProps> = ({ open, onClose }) => {
                   </Text>
                 </List.Item>
               </List.Root>
-              <Text>
+              <Text mb={4}>
                 <Text as="span" fontWeight="semibold">Example:</Text> A chocobo with stats like [5,1], [1,5], [5,1] is considered better than [5,5], [5,5], [3,4]. Why? When breeding 9 offspring, the first has high odds of producing a child that receives all three 5-stars from the parent, while the second is guaranteed only 2 five-stars maximum.
+              </Text>
+
+              <Heading size="sm" mb={2}>
+                Super Sprint Build Strategy
+              </Heading>
+              <Text mb={3}>
+                Super Sprint is an alternate chocobo racing build strategy that requires different stat priorities. While the default strategy optimizes for Max Speed + Stamina and treats Endurance as a tiebreaker, Super Sprint optimizes for Stamina + Endurance with Max Speed as the tiebreaker.
+              </Text>
+              <Text mb={4}>
+                When you enable the <Text as="span" fontWeight="semibold">Super Sprint</Text> toggle in the breeding optimizer, the calculator will use the alternate formula (Stamina + Endurance - Cunning - Acceleration) to find the best breeding pairs specifically for this build strategy. This ensures your breeding path aligns with the specific stat requirements for competitive Super Sprint racing.
               </Text>
             </Box>
 
