@@ -12,6 +12,7 @@ import { Download, Upload } from "lucide-react";
 import { OptimalPair } from "./OptimalPair";
 import { ChocoboList } from "./ChocoboList";
 import { SortControls } from "./SortControls";
+import { FilterControls } from "./FilterControls";
 import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
@@ -96,6 +97,9 @@ export const App: React.FC = () => {
 
           {/* Sort Controls */}
           <SortControls />
+
+          {/* Filter Controls */}
+          <FilterControls />
 
           {/* Chocobo Lists */}
           <Grid

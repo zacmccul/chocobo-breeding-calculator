@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Chocobo, ChocoboGender, ChocoboAbility } from "../schemas/chocobo";
+import type { Chocobo, ChocoboGender } from "../schemas/chocobo";
 import {
   createDefaultChocobo,
   validateChocobo,
@@ -18,9 +18,14 @@ export interface OptimalPairResult {
   score: number;
 }
 
-interface AbilityFilter {
-  ability: ChocoboAbility;
-  minCount: number;
+export type StatName = "maxSpeed" | "acceleration" | "endurance" | "stamina" | "cunning";
+export type StatParent = "one" | "all";
+
+export interface StatFilter {
+  id: string;
+  stat: StatName;
+  parent: StatParent;
+  minValue: number; // 1-5
 }
 
 export type SortType = "quality" | "locked" | "fiveStars";
@@ -29,7 +34,7 @@ export type SortOrder = "asc" | "desc";
 interface ChocoboStore {
   chocobos: Chocobo[];
   optimalPair: OptimalPairResult | null;
-  abilityFilters: AbilityFilter[];
+  statFilters: StatFilter[];
   sortType: SortType;
   sortOrder: SortOrder;
   isEditMode: boolean;
@@ -45,8 +50,8 @@ interface ChocoboStore {
   clearOptimalPair: () => void;
   exportData: () => string;
   importData: (jsonString: string) => void;
-  addAbilityFilter: (filter: AbilityFilter) => void;
-  removeAbilityFilter: (index: number) => void;
+  addStatFilter: (filter: Omit<StatFilter, "id">) => void;
+  removeStatFilter: (id: string) => void;
   clearAllFilters: () => void;
   setSortType: (sortType: SortType) => void;
   setSortOrder: (sortOrder: SortOrder) => void;
@@ -115,7 +120,7 @@ export const useChocoboStore = create<ChocoboStore>()(
     (set, get) => ({
       chocobos: [],
       optimalPair: null,
-      abilityFilters: [],
+      statFilters: [],
       sortType: "quality" as SortType,
       sortOrder: "desc" as SortOrder,
       isEditMode: false,
@@ -168,7 +173,7 @@ export const useChocoboStore = create<ChocoboStore>()(
       },
 
       findOptimalBreedingPair: () => {
-        const chocobos = get().chocobos;
+        const chocobos = get().getFilteredChocobos();
         
         // Separate males and females
         const males = chocobos.filter(c => c.gender === "male");
@@ -240,20 +245,24 @@ export const useChocoboStore = create<ChocoboStore>()(
         }
       },
 
-      addAbilityFilter: (filter: AbilityFilter) => {
+      addStatFilter: (filter: Omit<StatFilter, "id">) => {
+        const newFilter: StatFilter = {
+          ...filter,
+          id: `filter-${Date.now()}-${Math.random()}`,
+        };
         set((state) => ({
-          abilityFilters: [...state.abilityFilters, filter],
+          statFilters: [...state.statFilters, newFilter],
         }));
       },
 
-      removeAbilityFilter: (index: number) => {
+      removeStatFilter: (id: string) => {
         set((state) => ({
-          abilityFilters: state.abilityFilters.filter((_, i) => i !== index),
+          statFilters: state.statFilters.filter((f) => f.id !== id),
         }));
       },
 
       clearAllFilters: () => {
-        set({ abilityFilters: [] });
+        set({ statFilters: [] });
       },
 
       setSortType: (sortType: SortType) => {
@@ -285,30 +294,45 @@ export const useChocoboStore = create<ChocoboStore>()(
       },
 
       getFilteredChocobos: () => {
-        const { chocobos, abilityFilters } = get();
+        const { chocobos, statFilters } = get();
         
-        if (abilityFilters.length === 0) {
+        if (statFilters.length === 0) {
           return chocobos;
         }
 
         return chocobos.filter((chocobo) => {
-          return abilityFilters.every((filter) => {
-            // If chocobo doesn't have an ability, it doesn't match
-            if (!chocobo.ability) return false;
+          return statFilters.every((filter) => {
+            const { stat, parent, minValue } = filter;
             
-            // For now, we just check if the ability matches
-            // The minCount feature would require tracking multiple chocobos
-            return chocobo.ability === filter.ability;
+            // Map stat name to chocobo stat properties
+            const statMap: Record<StatName, { father: keyof typeof chocobo.stats; mother: keyof typeof chocobo.stats }> = {
+              maxSpeed: { father: 'fatherMaxSpeed', mother: 'motherMaxSpeed' },
+              acceleration: { father: 'fatherAcceleration', mother: 'motherAcceleration' },
+              endurance: { father: 'fatherEndurance', mother: 'motherEndurance' },
+              stamina: { father: 'fatherStamina', mother: 'motherStamina' },
+              cunning: { father: 'fatherCunning', mother: 'motherCunning' },
+            };
+            
+            const fatherStat = chocobo.stats[statMap[stat].father];
+            const motherStat = chocobo.stats[statMap[stat].mother];
+            
+            if (parent === 'one') {
+              // At least one parent meets the requirement
+              return fatherStat >= minValue || motherStat >= minValue;
+            } else { // all
+              // Both parents meet the requirement
+              return fatherStat >= minValue && motherStat >= minValue;
+            }
           });
         });
       },
 
       getMaleChocobos: () => {
-        return get().chocobos.filter((c) => c.gender === "male");
+        return get().getFilteredChocobos().filter((c) => c.gender === "male");
       },
 
       getFemaleChocobos: () => {
-        return get().chocobos.filter((c) => c.gender === "female");
+        return get().getFilteredChocobos().filter((c) => c.gender === "female");
       },
 
       getSortedMales: () => {
