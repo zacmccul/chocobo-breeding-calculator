@@ -1,7 +1,7 @@
 {
   "name": "chocobobreedingcalculator",
   "version": "0.1.0",
-  "homepage": "https://bogdanblazkowiz.github.io/chocobo-breeding-calculator",
+  "homepage": "https://zacmccul.github.io/chocobo-breeding-calculator",
   "private": true,
   "dependencies": {
     "@chakra-ui/react": "^3.30.0",
