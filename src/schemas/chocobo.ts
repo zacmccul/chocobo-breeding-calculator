@@ -109,6 +109,7 @@ export const ChocoboStatsSchema = z.object({
 export const ChocoboSchema = z.object({
   id: z.string().uuid(),
   gender: ChocoboGenderSchema,
+  name: z.string().optional(),
   grade: z.number().int().min(1).max(9).optional(),
   ability: ChocoboAbilitySchema,
   stats: ChocoboStatsSchema,

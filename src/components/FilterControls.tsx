@@ -104,6 +104,7 @@ export const FilterControls: React.FC = () => {
   const [selectedStatValue, setSelectedStatValue] = useState<number>(5);
   const [selectedGrade, setSelectedGrade] = useState<number>(9);
   const [selectedAbility, setSelectedAbility] = useState<ChocoboAbility | "None">("None");
+  const [nameSearchQuery, setNameSearchQuery] = useState<string>("");
   const [showAddFilter, setShowAddFilter] = useState(false);
 
   const handleAddFilter = () => {
@@ -124,6 +125,13 @@ export const FilterControls: React.FC = () => {
         type: "ability",
         ability: selectedAbility,
       } as Omit<StatFilter, "id">);
+    } else if (filterType === "name") {
+      if (nameSearchQuery.trim()) {
+        addStatFilter({
+          type: "name",
+          searchQuery: nameSearchQuery.trim(),
+        } as Omit<StatFilter, "id">);
+      }
     }
     setShowAddFilter(false);
   };
@@ -137,6 +145,8 @@ export const FilterControls: React.FC = () => {
       return `Grade >= ${filter.minValue}`;
     } else if (filter.type === "ability") {
       return `Ability: ${filter.ability}`;
+    } else if (filter.type === "name") {
+      return `Name contains: "${filter.searchQuery}"`;
     }
     return "";
   };
@@ -203,6 +213,7 @@ export const FilterControls: React.FC = () => {
                     <option value="stat">Stat</option>
                     <option value="grade">Grade</option>
                     <option value="ability">Ability</option>
+                    <option value="name">Name</option>
                   </NativeSelectField>
                 </NativeSelectRoot>
 
@@ -278,6 +289,16 @@ export const FilterControls: React.FC = () => {
                       ))}
                     </NativeSelectField>
                   </NativeSelectRoot>
+                )}
+
+                {filterType === "name" && (
+                  <Input
+                    placeholder="Enter name to search"
+                    size="sm"
+                    width="200px"
+                    value={nameSearchQuery}
+                    onChange={(e) => setNameSearchQuery(e.target.value)}
+                  />
                 )}
 
                 <Button size="sm" colorScheme="green" onClick={handleAddFilter}>

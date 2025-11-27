@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Box,
@@ -59,16 +59,43 @@ const StatInput: React.FC<{
 
 export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) => {
   const { updateChocobo, updateChocoboStats, isEditMode } = useChocoboStore();
+  
+  // Local state for debounced name input
+  const [localName, setLocalName] = useState(chocobo.name || "");
 
   const isMale = chocobo.gender === "male";
   const borderColor = isMale ? "blue.300" : "red.300";
   const switchColorScheme = isMale ? "blue" : "red";
+
+  // Sync local state when chocobo.name changes from external source
+  useEffect(() => {
+    setLocalName(chocobo.name || "");
+  }, [chocobo.name]);
+
+  // Debounce the name update to the store
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmedName = localName.trim();
+      const currentName = chocobo.name || "";
+      
+      // Only update if the value has actually changed
+      if (trimmedName !== currentName) {
+        updateChocobo(chocobo.id, { name: trimmedName === "" ? undefined : trimmedName });
+      }
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [localName, chocobo.id, chocobo.name, updateChocobo]);
 
   const handleGenderChange = () => {
     console.log('Gender change triggered:', { currentGender: chocobo.gender, chocoboId: chocobo.id });
     const newGender = chocobo.gender === "male" ? "female" : "male";
     console.log('Updating to:', newGender);
     updateChocobo(chocobo.id, { gender: newGender });
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalName(e.target.value);
   };
 
   const handleGradeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +225,21 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
       </IconButton>
 
       <VStack align="stretch" gap={3}>
+        {/* Name Input */}
+        <Box>
+          <Text fontSize="sm" fontWeight="medium" mb={1}>
+            Name:
+          </Text>
+          <Input
+            type="text"
+            value={localName}
+            onChange={handleNameChange}
+            placeholder="Optional chocobo name"
+            size="sm"
+            disabled={!isEditMode}
+          />
+        </Box>
+
         {/* Gender and Grade Row */}
         <HStack gap={4} flexWrap="wrap">
           <HStack>

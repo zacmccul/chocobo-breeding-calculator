@@ -20,7 +20,7 @@ export interface OptimalPairResult {
 
 export type StatName = "maxSpeed" | "acceleration" | "endurance" | "stamina" | "cunning";
 export type StatParent = "one" | "all";
-export type FilterType = "stat" | "grade" | "ability";
+export type FilterType = "stat" | "grade" | "ability" | "name";
 
 // Base filter interface
 interface BaseFilter {
@@ -48,8 +48,14 @@ export interface AbilityFilterData extends BaseFilter {
   ability: string; // Can be an ability name or "None"
 }
 
+// Name filter
+export interface NameFilterData extends BaseFilter {
+  type: "name";
+  searchQuery: string;
+}
+
 // Union type for all filters
-export type StatFilter = StatFilterData | GradeFilterData | AbilityFilterData;
+export type StatFilter = StatFilterData | GradeFilterData | AbilityFilterData | NameFilterData;
 
 export type SortType = "quality" | "locked" | "fiveStars";
 export type SortOrder = "asc" | "desc";
@@ -389,6 +395,12 @@ export const useChocoboStore = create<ChocoboStore>()(
                 return chocobo.ability === undefined;
               }
               return chocobo.ability === filter.ability;
+            } else if (filter.type === 'name') {
+              // Name filter - lowercase stripped comparison (contains)
+              if (!chocobo.name) return false;
+              const normalizedName = chocobo.name.toLowerCase().replace(/\s+/g, '');
+              const normalizedQuery = filter.searchQuery.toLowerCase().replace(/\s+/g, '');
+              return normalizedName.includes(normalizedQuery);
             }
             return true;
           });
