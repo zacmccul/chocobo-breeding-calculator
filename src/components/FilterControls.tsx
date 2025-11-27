@@ -8,9 +8,11 @@ import {
   NativeSelectRoot,
   NativeSelectField,
   IconButton,
+  Input,
 } from "@chakra-ui/react";
 import { Filter, X, Plus } from "lucide-react";
-import { useChocoboStore, type StatName, type StatParent, type StatFilter } from "../store/chocoboStore";
+import { useChocoboStore, type StatName, type StatParent, type StatFilter, type FilterType } from "../store/chocoboStore";
+import type { ChocoboAbility } from "../schemas/chocobo";
 
 const statDisplayNames: Record<StatName, string> = {
   maxSpeed: "Max Speed",
@@ -20,27 +22,66 @@ const statDisplayNames: Record<StatName, string> = {
   cunning: "Cunning",
 };
 
+const chocoboAbilities: (ChocoboAbility | "None")[] = [
+  "Choco Cure",
+  "Choco Dash",
+  "Choco Guard",
+  "Choco Kick",
+  "Choco Meteor",
+  "Choco Reflect",
+  "Choco Regen",
+  "Choco Slip",
+  "Head Start",
+  "Increased Stamina I",
+  "Increased Stamina II",
+  "Increased Stamina III",
+  "None",
+];
+
 export const FilterControls: React.FC = () => {
   const { statFilters, addStatFilter, removeStatFilter, clearAllFilters } = useChocoboStore();
   
+  const [filterType, setFilterType] = useState<FilterType>("stat");
   const [selectedStat, setSelectedStat] = useState<StatName>("maxSpeed");
   const [selectedParent, setSelectedParent] = useState<StatParent>("one");
-  const [selectedValue, setSelectedValue] = useState<number>(5);
+  const [selectedStatValue, setSelectedStatValue] = useState<number>(5);
+  const [selectedGrade, setSelectedGrade] = useState<number>(9);
+  const [selectedAbility, setSelectedAbility] = useState<ChocoboAbility | "None">("None");
   const [showAddFilter, setShowAddFilter] = useState(false);
 
   const handleAddFilter = () => {
-    addStatFilter({
-      stat: selectedStat,
-      parent: selectedParent,
-      minValue: selectedValue,
-    });
+    if (filterType === "stat") {
+      addStatFilter({
+        type: "stat",
+        stat: selectedStat,
+        parent: selectedParent,
+        minValue: selectedStatValue,
+      } as Omit<StatFilter, "id">);
+    } else if (filterType === "grade") {
+      addStatFilter({
+        type: "grade",
+        minValue: selectedGrade,
+      } as Omit<StatFilter, "id">);
+    } else if (filterType === "ability") {
+      addStatFilter({
+        type: "ability",
+        ability: selectedAbility,
+      } as Omit<StatFilter, "id">);
+    }
     setShowAddFilter(false);
   };
 
   const formatFilterLabel = (filter: StatFilter) => {
-    const statName = statDisplayNames[filter.stat];
-    const countLabel = filter.parent === "all" ? "All" : "One";
-    return `${statName} - ${countLabel} >= ${filter.minValue}`;
+    if (filter.type === "stat") {
+      const statName = statDisplayNames[filter.stat];
+      const countLabel = filter.parent === "all" ? "All" : "One";
+      return `${statName} - ${countLabel} >= ${filter.minValue}★`;
+    } else if (filter.type === "grade") {
+      return `Grade >= ${filter.minValue}`;
+    } else if (filter.type === "ability") {
+      return `Ability: ${filter.ability}`;
+    }
+    return "";
   };
 
   return (
@@ -96,44 +137,91 @@ export const FilterControls: React.FC = () => {
           >
             <VStack align="stretch" gap={3}>
               <HStack gap={2} flexWrap="wrap">
+                {/* Filter Type Selector */}
                 <NativeSelectRoot width="auto" size="sm">
                   <NativeSelectField
-                    value={selectedStat}
-                    onChange={(e) => setSelectedStat(e.target.value as StatName)}
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value as FilterType)}
                   >
-                    <option value="maxSpeed">Max Speed</option>
-                    <option value="acceleration">Acceleration</option>
-                    <option value="endurance">Endurance</option>
-                    <option value="stamina">Stamina</option>
-                    <option value="cunning">Cunning</option>
+                    <option value="stat">Stat</option>
+                    <option value="grade">Grade</option>
+                    <option value="ability">Ability</option>
                   </NativeSelectField>
                 </NativeSelectRoot>
 
-                <NativeSelectRoot width="auto" size="sm">
-                  <NativeSelectField
-                    value={selectedParent}
-                    onChange={(e) => setSelectedParent(e.target.value as StatParent)}
-                  >
-                    <option value="one">One Parent</option>
-                    <option value="all">Both (All)</option>
-                  </NativeSelectField>
-                </NativeSelectRoot>
+                {/* Conditional inputs based on filter type */}
+                {filterType === "stat" && (
+                  <>
+                    <NativeSelectRoot width="auto" size="sm">
+                      <NativeSelectField
+                        value={selectedStat}
+                        onChange={(e) => setSelectedStat(e.target.value as StatName)}
+                      >
+                        <option value="maxSpeed">Max Speed</option>
+                        <option value="acceleration">Acceleration</option>
+                        <option value="endurance">Endurance</option>
+                        <option value="stamina">Stamina</option>
+                        <option value="cunning">Cunning</option>
+                      </NativeSelectField>
+                    </NativeSelectRoot>
 
-                <HStack gap={1}>
-                  <Text fontSize="sm">≥</Text>
+                    <NativeSelectRoot width="auto" size="sm">
+                      <NativeSelectField
+                        value={selectedParent}
+                        onChange={(e) => setSelectedParent(e.target.value as StatParent)}
+                      >
+                        <option value="one">One Parent</option>
+                        <option value="all">Both (All)</option>
+                      </NativeSelectField>
+                    </NativeSelectRoot>
+
+                    <HStack gap={1}>
+                      <Text fontSize="sm">≥</Text>
+                      <NativeSelectRoot width="auto" size="sm">
+                        <NativeSelectField
+                          value={selectedStatValue}
+                          onChange={(e) => setSelectedStatValue(parseInt(e.target.value))}
+                        >
+                          <option value={1}>1★</option>
+                          <option value={2}>2★</option>
+                          <option value={3}>3★</option>
+                          <option value={4}>4★</option>
+                          <option value={5}>5★</option>
+                        </NativeSelectField>
+                      </NativeSelectRoot>
+                    </HStack>
+                  </>
+                )}
+
+                {filterType === "grade" && (
+                  <HStack gap={1}>
+                    <Text fontSize="sm">≥</Text>
+                    <Input
+                      type="number"
+                      size="sm"
+                      width="70px"
+                      min={1}
+                      max={9}
+                      value={selectedGrade}
+                      onChange={(e) => setSelectedGrade(parseInt(e.target.value) || 1)}
+                    />
+                  </HStack>
+                )}
+
+                {filterType === "ability" && (
                   <NativeSelectRoot width="auto" size="sm">
                     <NativeSelectField
-                      value={selectedValue}
-                      onChange={(e) => setSelectedValue(parseInt(e.target.value))}
+                      value={selectedAbility}
+                      onChange={(e) => setSelectedAbility(e.target.value as ChocoboAbility | "None")}
                     >
-                      <option value={1}>1★</option>
-                      <option value={2}>2★</option>
-                      <option value={3}>3★</option>
-                      <option value={4}>4★</option>
-                      <option value={5}>5★</option>
+                      {chocoboAbilities.map((ability) => (
+                        <option key={ability} value={ability}>
+                          {ability}
+                        </option>
+                      ))}
                     </NativeSelectField>
                   </NativeSelectRoot>
-                </HStack>
+                )}
 
                 <Button size="sm" colorScheme="green" onClick={handleAddFilter}>
                   Add
@@ -183,7 +271,7 @@ export const FilterControls: React.FC = () => {
 
         {statFilters.length === 0 && !showAddFilter && (
           <Text fontSize="sm" color="gray.500">
-            No filters applied. Click "Add Filter" to filter chocobos by stats.
+            No filters applied. Click "Add Filter" to filter chocobos by stats, grade, or ability.
           </Text>
         )}
       </VStack>

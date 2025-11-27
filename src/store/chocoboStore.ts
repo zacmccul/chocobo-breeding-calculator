@@ -20,13 +20,36 @@ export interface OptimalPairResult {
 
 export type StatName = "maxSpeed" | "acceleration" | "endurance" | "stamina" | "cunning";
 export type StatParent = "one" | "all";
+export type FilterType = "stat" | "grade" | "ability";
 
-export interface StatFilter {
+// Base filter interface
+interface BaseFilter {
   id: string;
+  type: FilterType;
+}
+
+// Stat filter
+export interface StatFilterData extends BaseFilter {
+  type: "stat";
   stat: StatName;
   parent: StatParent;
   minValue: number; // 1-5
 }
+
+// Grade filter
+export interface GradeFilterData extends BaseFilter {
+  type: "grade";
+  minValue: number; // 1-9
+}
+
+// Ability filter (including "None" as a special case)
+export interface AbilityFilterData extends BaseFilter {
+  type: "ability";
+  ability: string; // Can be an ability name or "None"
+}
+
+// Union type for all filters
+export type StatFilter = StatFilterData | GradeFilterData | AbilityFilterData;
 
 export type SortType = "quality" | "locked" | "fiveStars";
 export type SortOrder = "asc" | "desc";
@@ -252,7 +275,7 @@ export const useChocoboStore = create<ChocoboStore>()(
         const newFilter: StatFilter = {
           ...filter,
           id: `filter-${Date.now()}-${Math.random()}`,
-        };
+        } as StatFilter;
         set((state) => ({
           statFilters: [...state.statFilters, newFilter],
         }));
@@ -309,27 +332,41 @@ export const useChocoboStore = create<ChocoboStore>()(
 
         return chocobos.filter((chocobo) => {
           return statFilters.every((filter) => {
-            const { stat, parent, minValue } = filter;
-            
-            // Map stat name to chocobo stat properties
-            const statMap: Record<StatName, { father: keyof typeof chocobo.stats; mother: keyof typeof chocobo.stats }> = {
-              maxSpeed: { father: 'fatherMaxSpeed', mother: 'motherMaxSpeed' },
-              acceleration: { father: 'fatherAcceleration', mother: 'motherAcceleration' },
-              endurance: { father: 'fatherEndurance', mother: 'motherEndurance' },
-              stamina: { father: 'fatherStamina', mother: 'motherStamina' },
-              cunning: { father: 'fatherCunning', mother: 'motherCunning' },
-            };
-            
-            const fatherStat = chocobo.stats[statMap[stat].father];
-            const motherStat = chocobo.stats[statMap[stat].mother];
-            
-            if (parent === 'one') {
-              // At least one parent meets the requirement
-              return fatherStat >= minValue || motherStat >= minValue;
-            } else { // all
-              // Both parents meet the requirement
-              return fatherStat >= minValue && motherStat >= minValue;
+            // Handle different filter types
+            if (filter.type === 'stat') {
+              const { stat, parent, minValue } = filter;
+              
+              // Map stat name to chocobo stat properties
+              const statMap: Record<StatName, { father: keyof typeof chocobo.stats; mother: keyof typeof chocobo.stats }> = {
+                maxSpeed: { father: 'fatherMaxSpeed', mother: 'motherMaxSpeed' },
+                acceleration: { father: 'fatherAcceleration', mother: 'motherAcceleration' },
+                endurance: { father: 'fatherEndurance', mother: 'motherEndurance' },
+                stamina: { father: 'fatherStamina', mother: 'motherStamina' },
+                cunning: { father: 'fatherCunning', mother: 'motherCunning' },
+              };
+              
+              const fatherStat = chocobo.stats[statMap[stat].father];
+              const motherStat = chocobo.stats[statMap[stat].mother];
+              
+              if (parent === 'one') {
+                // At least one parent meets the requirement
+                return fatherStat >= minValue || motherStat >= minValue;
+              } else { // all
+                // Both parents meet the requirement
+                return fatherStat >= minValue && motherStat >= minValue;
+              }
+            } else if (filter.type === 'grade') {
+              // Grade filter - check if chocobo grade meets minimum
+              if (chocobo.grade === undefined) return false;
+              return chocobo.grade >= filter.minValue;
+            } else if (filter.type === 'ability') {
+              // Ability filter - exact match or check for "None"
+              if (filter.ability === 'None') {
+                return chocobo.ability === undefined;
+              }
+              return chocobo.ability === filter.ability;
             }
+            return true;
           });
         });
       },
