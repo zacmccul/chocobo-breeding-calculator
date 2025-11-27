@@ -101,12 +101,14 @@ export const App: React.FC = () => {
             position="fixed"
             top={4}
             right={4}
-            zIndex={10}
+            zIndex={1000}
             gap={2}
             bg="white"
             p={2}
             borderRadius="md"
             boxShadow="lg"
+            borderWidth="2px"
+            borderColor="blue.500"
           >
             <IconButton
               aria-label="Show information"
@@ -150,9 +152,10 @@ export const App: React.FC = () => {
               top={isSticky ? 4 : "auto"}
               left={isSticky ? "50%" : "auto"}
               transform={isSticky ? "translateX(-50%)" : "none"}
-              width={isSticky ? "min(calc(100% - 2rem), 1440px)" : "full"}
-              zIndex={isSticky ? 5 : "auto"}
+              width={isSticky ? "min(calc(100% - 10rem), 1440px)" : "full"}
+              zIndex={isSticky ? 100 : "auto"}
               transition="all 0.2s"
+              marginInlineEnd={isSticky ? "8rem" : "0"}
             >
               {/* Sort Controls */}
               <SortControls />

@@ -13,6 +13,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogRoot,
+  DialogBackdrop,
+  Portal,
 } from "@chakra-ui/react";
 
 interface InfoModalProps {
@@ -31,8 +33,20 @@ export const InfoModal: React.FC<InfoModalProps> = ({ open, onClose }) => {
       }}
       size="xl"
       scrollBehavior="inside"
+      lazyMount
+      unmountOnExit
     >
-      <DialogContent maxH="90vh">
+      <Portal>
+        <DialogBackdrop />
+        <DialogContent 
+          maxH="90vh" 
+          width="90vw"
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          zIndex={1500}
+        >
         <DialogHeader>
           <Heading size="lg">Welcome to the FFXIV Chocobo Breeding Calculator</Heading>
         </DialogHeader>
@@ -235,6 +249,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ open, onClose }) => {
           </VStack>
         </DialogBody>
       </DialogContent>
+      </Portal>
     </DialogRoot>
   );
 };
