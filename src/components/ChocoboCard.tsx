@@ -25,7 +25,8 @@ const StatInput: React.FC<{
   value: number;
   onChange: (value: number) => void;
   color: string;
-}> = ({ label, value, onChange, color }) => {
+  disabled?: boolean;
+}> = ({ label, value, onChange, color, disabled = false }) => {
   const stars = "★".repeat(value) + "☆".repeat(5 - value);
 
   return (
@@ -47,6 +48,7 @@ const StatInput: React.FC<{
         size="sm"
         width="16"
         textAlign="center"
+        disabled={disabled}
       />
       <Text fontSize="lg" color={color} userSelect="none">
         {stars}
@@ -56,7 +58,7 @@ const StatInput: React.FC<{
 };
 
 export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) => {
-  const { updateChocobo, updateChocoboStats } = useChocoboStore();
+  const { updateChocobo, updateChocoboStats, isEditMode } = useChocoboStore();
 
   const isMale = chocobo.gender === "male";
   const borderColor = isMale ? "blue.300" : "red.300";
@@ -150,6 +152,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
               onCheckedChange={handleGenderChange}
               colorPalette={switchColorScheme}
               aria-label="Toggle gender"
+              disabled={!isEditMode}
             >
               <Switch.Control 
                 tabIndex={0}
@@ -180,6 +183,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
               size="sm"
               width="16"
               textAlign="center"
+              disabled={!isEditMode}
             />
           </HStack>
 
@@ -196,6 +200,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
               size="sm"
               width="16"
               textAlign="center"
+              disabled={!isEditMode}
             />
           </HStack>
         </HStack>
@@ -208,6 +213,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
           <select
             value={chocobo.ability || ""}
             onChange={handleAbilityChange}
+            disabled={!isEditMode}
             style={{
               width: "100%",
               padding: "0.5rem",
@@ -239,6 +245,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { fatherMaxSpeed: v })
                 }
                 color="blue.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Acceleration"
@@ -247,6 +254,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { fatherAcceleration: v })
                 }
                 color="blue.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Endurance"
@@ -255,6 +263,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { fatherEndurance: v })
                 }
                 color="blue.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Stamina"
@@ -263,6 +272,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { fatherStamina: v })
                 }
                 color="blue.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Cunning"
@@ -271,6 +281,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { fatherCunning: v })
                 }
                 color="blue.600"
+                disabled={!isEditMode}
               />
             </VStack>
           </GridItem>
@@ -288,6 +299,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { motherMaxSpeed: v })
                 }
                 color="red.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Acceleration"
@@ -296,6 +308,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { motherAcceleration: v })
                 }
                 color="red.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Endurance"
@@ -304,6 +317,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { motherEndurance: v })
                 }
                 color="red.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Stamina"
@@ -312,6 +326,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { motherStamina: v })
                 }
                 color="red.600"
+                disabled={!isEditMode}
               />
               <StatInput
                 label="Cunning"
@@ -320,6 +335,7 @@ export const ChocoboCard: React.FC<ChocoboCardProps> = ({ chocobo, onDelete }) =
                   updateChocoboStats(chocobo.id, { motherCunning: v })
                 }
                 color="red.600"
+                disabled={!isEditMode}
               />
             </VStack>
           </GridItem>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Button, VStack, Text, Grid, GridItem, Heading } from "@chakra-ui/react";
+import { Box, Button, VStack, Text, Heading } from "@chakra-ui/react";
 import { ChocoboCard } from "./ChocoboCard";
 import { useChocoboStore } from "../store/chocoboStore";
 

@@ -6,6 +6,8 @@ import {
   validateChocobo,
   validateExport,
   calculateChocoboQuality,
+  countLockedStats,
+  countFiveStarStats,
 } from "../schemas/chocobo";
 import { evaluateBreedingPair } from "../utils/breeding";
 import type { ChocoboParentDataParsed } from "../utils/breeding";
@@ -21,10 +23,18 @@ interface AbilityFilter {
   minCount: number;
 }
 
+export type SortType = "quality" | "locked" | "fiveStars";
+export type SortOrder = "asc" | "desc";
+
 interface ChocoboStore {
   chocobos: Chocobo[];
   optimalPair: OptimalPairResult | null;
   abilityFilters: AbilityFilter[];
+  sortType: SortType;
+  sortOrder: SortOrder;
+  isEditMode: boolean;
+  frozenMaleSortOrder: string[];
+  frozenFemaleSortOrder: string[];
 
   // Actions
   addChocobo: (gender: ChocoboGender) => void;
@@ -38,6 +48,9 @@ interface ChocoboStore {
   addAbilityFilter: (filter: AbilityFilter) => void;
   removeAbilityFilter: (index: number) => void;
   clearAllFilters: () => void;
+  setSortType: (sortType: SortType) => void;
+  setSortOrder: (sortOrder: SortOrder) => void;
+  setEditMode: (isEditMode: boolean) => void;
   getFilteredChocobos: () => Chocobo[];
   getMaleChocobos: () => Chocobo[];
   getFemaleChocobos: () => Chocobo[];
@@ -65,12 +78,49 @@ function convertToParentDataParsed(chocobo: Chocobo): ChocoboParentDataParsed {
   };
 }
 
+/**
+ * Sort chocobos based on the selected sort type and order
+ */
+function sortChocobos(chocobos: Chocobo[], sortType: SortType, sortOrder: SortOrder): Chocobo[] {
+  const sorted = [...chocobos].sort((a, b) => {
+    let valueA: number;
+    let valueB: number;
+    
+    switch (sortType) {
+      case "quality":
+        valueA = calculateChocoboQuality(a);
+        valueB = calculateChocoboQuality(b);
+        break;
+      case "locked":
+        valueA = countLockedStats(a);
+        valueB = countLockedStats(b);
+        break;
+      case "fiveStars":
+        valueA = countFiveStarStats(a);
+        valueB = countFiveStarStats(b);
+        break;
+      default:
+        valueA = calculateChocoboQuality(a);
+        valueB = calculateChocoboQuality(b);
+    }
+    
+    return sortOrder === "desc" ? valueB - valueA : valueA - valueB;
+  });
+  
+  return sorted;
+}
+
 export const useChocoboStore = create<ChocoboStore>()(
   persist(
     (set, get) => ({
       chocobos: [],
       optimalPair: null,
       abilityFilters: [],
+      sortType: "quality" as SortType,
+      sortOrder: "desc" as SortOrder,
+      isEditMode: false,
+      frozenMaleSortOrder: [],
+      frozenFemaleSortOrder: [],
 
       addChocobo: (gender: ChocoboGender) => {
         const newChocobo = createDefaultChocobo(gender);
@@ -206,6 +256,34 @@ export const useChocoboStore = create<ChocoboStore>()(
         set({ abilityFilters: [] });
       },
 
+      setSortType: (sortType: SortType) => {
+        set({ sortType });
+      },
+
+      setSortOrder: (sortOrder: SortOrder) => {
+        set({ sortOrder });
+      },
+
+      setEditMode: (isEditMode: boolean) => {
+        if (isEditMode) {
+          // Entering edit mode - freeze current sort order
+          const males = get().getSortedMales();
+          const females = get().getSortedFemales();
+          set({
+            isEditMode,
+            frozenMaleSortOrder: males.map(c => c.id),
+            frozenFemaleSortOrder: females.map(c => c.id),
+          });
+        } else {
+          // Exiting edit mode - clear frozen order (will re-sort)
+          set({
+            isEditMode,
+            frozenMaleSortOrder: [],
+            frozenFemaleSortOrder: [],
+          });
+        }
+      },
+
       getFilteredChocobos: () => {
         const { chocobos, abilityFilters } = get();
         
@@ -234,15 +312,43 @@ export const useChocoboStore = create<ChocoboStore>()(
       },
 
       getSortedMales: () => {
-        return get()
-          .getMaleChocobos()
-          .sort((a, b) => calculateChocoboQuality(b) - calculateChocoboQuality(a));
+        const { sortType, sortOrder, isEditMode, frozenMaleSortOrder } = get();
+        const males = get().getMaleChocobos();
+        
+        if (isEditMode && frozenMaleSortOrder.length > 0) {
+          // Use frozen sort order
+          const sorted = [...males].sort((a, b) => {
+            const indexA = frozenMaleSortOrder.indexOf(a.id);
+            const indexB = frozenMaleSortOrder.indexOf(b.id);
+            // Put new chocobos (not in frozen list) at the end
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          });
+          return sorted;
+        }
+        
+        return sortChocobos(males, sortType, sortOrder);
       },
 
       getSortedFemales: () => {
-        return get()
-          .getFemaleChocobos()
-          .sort((a, b) => calculateChocoboQuality(b) - calculateChocoboQuality(a));
+        const { sortType, sortOrder, isEditMode, frozenFemaleSortOrder } = get();
+        const females = get().getFemaleChocobos();
+        
+        if (isEditMode && frozenFemaleSortOrder.length > 0) {
+          // Use frozen sort order
+          const sorted = [...females].sort((a, b) => {
+            const indexA = frozenFemaleSortOrder.indexOf(a.id);
+            const indexB = frozenFemaleSortOrder.indexOf(b.id);
+            // Put new chocobos (not in frozen list) at the end
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          });
+          return sorted;
+        }
+        
+        return sortChocobos(females, sortType, sortOrder);
       },
     }),
     {

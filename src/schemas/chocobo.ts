@@ -120,7 +120,7 @@ export function createDefaultChocobo(gender: ChocoboGender): Chocobo {
 }
 
 /**
- * Calculate total stat value for a chocobo
+ * Calculate total stat value for a chocobo (quality)
  */
 export function calculateChocoboQuality(chocobo: Chocobo): number {
   const stats = chocobo.stats;
@@ -136,6 +136,43 @@ export function calculateChocoboQuality(chocobo: Chocobo): number {
     stats.motherStamina +
     stats.motherCunning
   );
+}
+
+/**
+ * Count the number of locked stats (both father and mother have 5 stars)
+ */
+export function countLockedStats(chocobo: Chocobo): number {
+  const stats = chocobo.stats;
+  let locked = 0;
+  
+  if (stats.fatherMaxSpeed === 5 && stats.motherMaxSpeed === 5) locked++;
+  if (stats.fatherAcceleration === 5 && stats.motherAcceleration === 5) locked++;
+  if (stats.fatherEndurance === 5 && stats.motherEndurance === 5) locked++;
+  if (stats.fatherStamina === 5 && stats.motherStamina === 5) locked++;
+  if (stats.fatherCunning === 5 && stats.motherCunning === 5) locked++;
+  
+  return locked;
+}
+
+/**
+ * Count the total number of stats with 5 stars (father or mother)
+ */
+export function countFiveStarStats(chocobo: Chocobo): number {
+  const stats = chocobo.stats;
+  let count = 0;
+  
+  if (stats.fatherMaxSpeed === 5) count++;
+  if (stats.fatherAcceleration === 5) count++;
+  if (stats.fatherEndurance === 5) count++;
+  if (stats.fatherStamina === 5) count++;
+  if (stats.fatherCunning === 5) count++;
+  if (stats.motherMaxSpeed === 5) count++;
+  if (stats.motherAcceleration === 5) count++;
+  if (stats.motherEndurance === 5) count++;
+  if (stats.motherStamina === 5) count++;
+  if (stats.motherCunning === 5) count++;
+  
+  return count;
 }
 
 /**

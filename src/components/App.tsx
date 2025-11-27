@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  Button,
   Container,
   Grid,
   GridItem,
@@ -12,6 +11,7 @@ import {
 import { Download, Upload } from "lucide-react";
 import { OptimalPair } from "./OptimalPair";
 import { ChocoboList } from "./ChocoboList";
+import { SortControls } from "./SortControls";
 import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
@@ -93,6 +93,9 @@ export const App: React.FC = () => {
 
           {/* Optimal Pair Section */}
           <OptimalPair />
+
+          {/* Sort Controls */}
+          <SortControls />
 
           {/* Chocobo Lists */}
           <Grid
