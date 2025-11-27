@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -17,6 +17,24 @@ import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
   const { exportData, importData } = useChocoboStore();
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const controlsContainerRef = useRef<HTMLDivElement>(null);
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (controlsContainerRef.current) {
+        const rect = controlsContainerRef.current.getBoundingClientRect();
+        // When the original position scrolls above the viewport, make it sticky
+        setIsSticky(rect.top <= 0);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initial state
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleExport = () => {
     try {
@@ -95,11 +113,32 @@ export const App: React.FC = () => {
           {/* Optimal Pair Section */}
           <OptimalPair />
 
-          {/* Sort Controls */}
-          <SortControls />
+          {/* Controls Container - this marks where the controls should stick */}
+          <Box ref={controlsContainerRef} position="relative">
+            <VStack
+              ref={controlsRef}
+              align="stretch"
+              gap={4}
+              position={isSticky ? "fixed" : "relative"}
+              top={isSticky ? 4 : "auto"}
+              left={isSticky ? "50%" : "auto"}
+              transform={isSticky ? "translateX(-50%)" : "none"}
+              width={isSticky ? "min(calc(100% - 2rem), 1440px)" : "full"}
+              zIndex={isSticky ? 5 : "auto"}
+              transition="all 0.2s"
+            >
+              {/* Sort Controls */}
+              <SortControls />
 
-          {/* Filter Controls */}
-          <FilterControls />
+              {/* Filter Controls */}
+              <FilterControls />
+            </VStack>
+            
+            {/* Spacer to prevent content jump when controls become fixed */}
+            {isSticky && (
+              <Box height={controlsRef.current?.offsetHeight || 0} />
+            )}
+          </Box>
 
           {/* Chocobo Lists */}
           <Grid
