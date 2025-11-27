@@ -5,7 +5,15 @@ import { useChocoboStore, type SortType, type SortOrder } from "../store/chocobo
 import { ArrowUpDown, Edit3 } from "lucide-react";
 
 export const SortControls: React.FC = () => {
-  const { sortType, sortOrder, isEditMode, setSortType, setSortOrder, setEditMode } = useChocoboStore();
+  const { 
+    sortType, 
+    sortOrder, 
+    isEditMode, 
+    pendingChangesWhileEditing,
+    setSortType, 
+    setSortOrder, 
+    setEditMode 
+  } = useChocoboStore();
 
   const handleSortTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSortType(event.target.value as SortType);
@@ -88,6 +96,20 @@ export const SortControls: React.FC = () => {
             </Switch.Root>
           </HStack>
         </Box>
+        
+        {isEditMode && pendingChangesWhileEditing && (
+          <Text 
+            fontSize="sm" 
+            color="orange.600" 
+            fontWeight="medium"
+            bg="orange.50"
+            px={3}
+            py={1}
+            borderRadius="md"
+          >
+            Disable Edit mode to apply sorting and filtering updates
+          </Text>
+        )}
       </HStack>
     </Box>
   );

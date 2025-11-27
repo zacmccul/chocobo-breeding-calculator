@@ -63,6 +63,8 @@ interface ChocoboStore {
   isEditMode: boolean;
   frozenMaleSortOrder: string[];
   frozenFemaleSortOrder: string[];
+  frozenFilteredIds: string[];
+  pendingChangesWhileEditing: boolean;
   hasSeenInfo: boolean;
 
   // Actions
@@ -151,6 +153,8 @@ export const useChocoboStore = create<ChocoboStore>()(
       isEditMode: false,
       frozenMaleSortOrder: [],
       frozenFemaleSortOrder: [],
+      frozenFilteredIds: [],
+      pendingChangesWhileEditing: false,
       hasSeenInfo: false,
 
       addChocobo: (gender: ChocoboGender) => {
@@ -278,43 +282,58 @@ export const useChocoboStore = create<ChocoboStore>()(
         } as StatFilter;
         set((state) => ({
           statFilters: [...state.statFilters, newFilter],
+          pendingChangesWhileEditing: state.isEditMode || state.pendingChangesWhileEditing,
         }));
       },
 
       removeStatFilter: (id: string) => {
         set((state) => ({
           statFilters: state.statFilters.filter((f) => f.id !== id),
+          pendingChangesWhileEditing: state.isEditMode || state.pendingChangesWhileEditing,
         }));
       },
 
       clearAllFilters: () => {
-        set({ statFilters: [] });
+        set((state) => ({
+          statFilters: [],
+          pendingChangesWhileEditing: state.isEditMode || state.pendingChangesWhileEditing,
+        }));
       },
 
       setSortType: (sortType: SortType) => {
-        set({ sortType });
+        set((state) => ({
+          sortType,
+          pendingChangesWhileEditing: state.isEditMode || state.pendingChangesWhileEditing,
+        }));
       },
 
       setSortOrder: (sortOrder: SortOrder) => {
-        set({ sortOrder });
+        set((state) => ({
+          sortOrder,
+          pendingChangesWhileEditing: state.isEditMode || state.pendingChangesWhileEditing,
+        }));
       },
 
       setEditMode: (isEditMode: boolean) => {
         if (isEditMode) {
-          // Entering edit mode - freeze current sort order
+          // Entering edit mode - freeze current sort order and filtered chocobos
           const males = get().getSortedMales();
           const females = get().getSortedFemales();
+          const filtered = get().getFilteredChocobos();
           set({
             isEditMode,
             frozenMaleSortOrder: males.map(c => c.id),
             frozenFemaleSortOrder: females.map(c => c.id),
+            frozenFilteredIds: filtered.map(c => c.id),
           });
         } else {
-          // Exiting edit mode - clear frozen order (will re-sort)
+          // Exiting edit mode - clear frozen order, filters, and pending changes flag
           set({
             isEditMode,
             frozenMaleSortOrder: [],
             frozenFemaleSortOrder: [],
+            frozenFilteredIds: [],
+            pendingChangesWhileEditing: false,
           });
         }
       },
@@ -324,7 +343,12 @@ export const useChocoboStore = create<ChocoboStore>()(
       },
 
       getFilteredChocobos: () => {
-        const { chocobos, statFilters } = get();
+        const { chocobos, statFilters, isEditMode, frozenFilteredIds } = get();
+        
+        // If in edit mode, use frozen filtered list to prevent chocobos from disappearing mid-edit
+        if (isEditMode && frozenFilteredIds.length > 0) {
+          return chocobos.filter(c => frozenFilteredIds.includes(c.id));
+        }
         
         if (statFilters.length === 0) {
           return chocobos;
