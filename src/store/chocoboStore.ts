@@ -40,6 +40,7 @@ interface ChocoboStore {
   isEditMode: boolean;
   frozenMaleSortOrder: string[];
   frozenFemaleSortOrder: string[];
+  hasSeenInfo: boolean;
 
   // Actions
   addChocobo: (gender: ChocoboGender) => void;
@@ -56,6 +57,7 @@ interface ChocoboStore {
   setSortType: (sortType: SortType) => void;
   setSortOrder: (sortOrder: SortOrder) => void;
   setEditMode: (isEditMode: boolean) => void;
+  setHasSeenInfo: (hasSeen: boolean) => void;
   getFilteredChocobos: () => Chocobo[];
   getMaleChocobos: () => Chocobo[];
   getFemaleChocobos: () => Chocobo[];
@@ -126,6 +128,7 @@ export const useChocoboStore = create<ChocoboStore>()(
       isEditMode: false,
       frozenMaleSortOrder: [],
       frozenFemaleSortOrder: [],
+      hasSeenInfo: false,
 
       addChocobo: (gender: ChocoboGender) => {
         const newChocobo = createDefaultChocobo(gender);
@@ -291,6 +294,10 @@ export const useChocoboStore = create<ChocoboStore>()(
             frozenFemaleSortOrder: [],
           });
         }
+      },
+
+      setHasSeenInfo: (hasSeen: boolean) => {
+        set({ hasSeenInfo: hasSeen });
       },
 
       getFilteredChocobos: () => {

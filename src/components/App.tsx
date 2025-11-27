@@ -8,18 +8,20 @@ import {
   IconButton,
   VStack,
 } from "@chakra-ui/react";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Info } from "lucide-react";
 import { OptimalPair } from "./OptimalPair";
 import { ChocoboList } from "./ChocoboList";
 import { SortControls } from "./SortControls";
 import { FilterControls } from "./FilterControls";
+import { InfoModal } from "./InfoModal";
 import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
-  const { exportData, importData } = useChocoboStore();
+  const { exportData, importData, hasSeenInfo, setHasSeenInfo } = useChocoboStore();
   const controlsRef = useRef<HTMLDivElement>(null);
   const controlsContainerRef = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,6 +37,13 @@ export const App: React.FC = () => {
     
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Auto-open info modal on first visit
+  useEffect(() => {
+    if (!hasSeenInfo) {
+      setIsInfoModalOpen(true);
+    }
+  }, [hasSeenInfo]);
 
   const handleExport = () => {
     try {
@@ -76,6 +85,13 @@ export const App: React.FC = () => {
     input.click();
   };
 
+  const handleInfoModalClose = () => {
+    setIsInfoModalOpen(false);
+    if (!hasSeenInfo) {
+      setHasSeenInfo(true);
+    }
+  };
+
   return (
     <Box minHeight="100vh" bg="gray.50" py={8}>
       <Container maxWidth="7xl">
@@ -93,6 +109,14 @@ export const App: React.FC = () => {
             boxShadow="lg"
           >
             <IconButton
+              aria-label="Show information"
+              onClick={() => setIsInfoModalOpen(true)}
+              colorScheme="purple"
+              title="Information & Help"
+            >
+              <Info size={20} />
+            </IconButton>
+            <IconButton
               aria-label="Export chocobos"
               onClick={handleExport}
               colorScheme="green"
@@ -109,6 +133,9 @@ export const App: React.FC = () => {
               <Upload size={20} />
             </IconButton>
           </HStack>
+
+          {/* Info Modal */}
+          <InfoModal open={isInfoModalOpen} onClose={handleInfoModalClose} />
 
           {/* Optimal Pair Section */}
           <OptimalPair />
