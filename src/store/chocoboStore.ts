@@ -165,9 +165,26 @@ export const useChocoboStore = create<ChocoboStore>()(
 
       addChocobo: (gender: ChocoboGender) => {
         const newChocobo = createDefaultChocobo(gender);
-        set((state) => ({
-          chocobos: [...state.chocobos, newChocobo],
-        }));
+        set((state) => {
+          // If in edit mode, add the new chocobo to the top of the frozen lists
+          if (state.isEditMode) {
+            return {
+              chocobos: [...state.chocobos, newChocobo],
+              frozenMaleSortOrder: gender === "male" 
+                ? [newChocobo.id, ...state.frozenMaleSortOrder]
+                : state.frozenMaleSortOrder,
+              frozenFemaleSortOrder: gender === "female"
+                ? [newChocobo.id, ...state.frozenFemaleSortOrder]
+                : state.frozenFemaleSortOrder,
+              frozenFilteredIds: [newChocobo.id, ...state.frozenFilteredIds],
+            };
+          }
+          
+          // Not in edit mode, just add the chocobo normally
+          return {
+            chocobos: [...state.chocobos, newChocobo],
+          };
+        });
       },
 
       removeChocobo: (id: string) => {
