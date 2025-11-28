@@ -81,6 +81,7 @@ interface ChocoboStore {
   updateChocoboStats: (id: string, stats: Partial<Chocobo["stats"]>) => void;
   findOptimalBreedingPair: () => void;
   clearOptimalPair: () => void;
+  breedOptimalPair: () => void;
   exportData: () => string;
   importData: (jsonString: string) => void;
   addStatFilter: (filter: Omit<StatFilter, "id">) => void;
@@ -270,6 +271,40 @@ export const useChocoboStore = create<ChocoboStore>()(
 
       clearOptimalPair: () => {
         set({ optimalPair: null });
+      },
+
+      breedOptimalPair: () => {
+        const { optimalPair } = get();
+        if (!optimalPair) return;
+
+        const fatherId = optimalPair.father.id;
+        const motherId = optimalPair.mother.id;
+
+        set((state) => {
+          const updatedChocobos = state.chocobos.map((c) => {
+            if (c.id === fatherId || c.id === motherId) {
+              return {
+                ...c,
+                coveringsLeft: Math.max(0, c.coveringsLeft - 1),
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return c;
+          });
+
+          // Update the optimal pair with the new coverings left
+          const updatedFather = updatedChocobos.find(c => c.id === fatherId);
+          const updatedMother = updatedChocobos.find(c => c.id === motherId);
+
+          return {
+            chocobos: updatedChocobos,
+            optimalPair: updatedFather && updatedMother ? {
+              ...state.optimalPair!,
+              father: updatedFather,
+              mother: updatedMother,
+            } : state.optimalPair,
+          };
+        });
       },
 
       exportData: () => {

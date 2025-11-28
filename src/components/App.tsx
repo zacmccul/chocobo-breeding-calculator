@@ -14,6 +14,7 @@ import { ChocoboList } from "./ChocoboList";
 import { SortControls } from "./SortControls";
 import { FilterControls } from "./FilterControls";
 import { InfoModal } from "./InfoModal";
+import { Toaster } from "../ui/toaster";
 import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
@@ -185,6 +186,7 @@ export const App: React.FC = () => {
           </Grid>
         </VStack>
       </Container>
+      <Toaster />
     </Box>
   );
 };

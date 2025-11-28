@@ -12,6 +12,7 @@ import {
   Badge,
   Switch,
 } from "@chakra-ui/react";
+import { toaster } from "../ui/toaster";
 import { useChocoboStore } from "../store/chocoboStore";
 import type { Chocobo } from "../schemas/chocobo";
 
@@ -127,6 +128,9 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
               {chocobo.ability}
             </Badge>
           )}
+          <Badge colorScheme="orange" fontSize="sm">
+            Coverings Left: {chocobo.coveringsLeft}
+          </Badge>
         </HStack>
       </VStack>
     </Box>
@@ -134,12 +138,28 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
 };
 
 export const OptimalPair: React.FC = () => {
-  const { optimalPair, findOptimalBreedingPair, getMaleChocobos, getFemaleChocobos, superSprint, setSuperSprint } =
+  const { optimalPair, findOptimalBreedingPair, breedOptimalPair, getMaleChocobos, getFemaleChocobos, superSprint, setSuperSprint } =
     useChocoboStore();
 
   const males = getMaleChocobos();
   const females = getFemaleChocobos();
   const canCalculate = males.length > 0 && females.length > 0;
+
+  const handleBreed = () => {
+    if (!optimalPair) return;
+
+    const fatherCoveringsLeft = Math.max(0, optimalPair.father.coveringsLeft - 1);
+    const motherCoveringsLeft = Math.max(0, optimalPair.mother.coveringsLeft - 1);
+
+    breedOptimalPair();
+
+    toaster.create({
+      title: "Breeding Complete",
+      description: `Father: ${fatherCoveringsLeft} covering${fatherCoveringsLeft !== 1 ? 's' : ''} left | Mother: ${motherCoveringsLeft} covering${motherCoveringsLeft !== 1 ? 's' : ''} left`,
+      type: "success",
+      duration: 4000,
+    });
+  };
 
   return (
     <Box width="full" mb={8}>
@@ -201,15 +221,23 @@ export const OptimalPair: React.FC = () => {
                     </Switch.Label>
                   </Switch.Root>
                 </HStack>
-                <Button
-                  onClick={findOptimalBreedingPair}
-                  colorScheme="green"
-                  size="lg"
-                  flex="1"
-                  ml={4}
-                >
-                  Recalculate Optimal Pair
-                </Button>
+                <HStack flex="1" ml={4}>
+                  <Button
+                    onClick={handleBreed}
+                    colorScheme="purple"
+                    size="sm"
+                  >
+                    Breed
+                  </Button>
+                  <Button
+                    onClick={findOptimalBreedingPair}
+                    colorScheme="green"
+                    size="lg"
+                    flex="1"
+                  >
+                    Recalculate Optimal Pair
+                  </Button>
+                </HStack>
               </HStack>
             </VStack>
           </Card.Root>
