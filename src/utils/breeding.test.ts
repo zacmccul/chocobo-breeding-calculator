@@ -206,7 +206,7 @@ describe("calculateBreedingScore", () => {
 });
 
 describe("evaluateBreedingPair", () => {
-  it("should return higher expected rank with 9 coverings than with fewer", () => {
+  it("should return consistent quality score regardless of coverings", () => {
     const parent1: ChocoboParentDataParsed = {
       gender: "male",
       coveringsLeft: 9,
@@ -239,23 +239,21 @@ describe("evaluateBreedingPair", () => {
 
     const resultWith9 = evaluateBreedingPair(parent1, parent2, false);
 
-    // Now test with fewer coverings
+    // Now test with fewer coverings - quality score should be the same
     parent1.coveringsLeft = 3;
     parent2.coveringsLeft = 3;
     const resultWith3 = evaluateBreedingPair(parent1, parent2, false);
 
-    // With 9 siblings, the expected best rank should be higher than with 3 siblings
-    expect(resultWith9).toBeGreaterThan(resultWith3);
+    // Expected quality is based on genetics, not number of coverings
+    expect(resultWith9).toBe(resultWith3);
     expect(resultWith9).toBeGreaterThan(0);
-    expect(resultWith9).toBeLessThan(1024);
-    expect(resultWith3).toBeGreaterThan(0);
-    expect(resultWith3).toBeLessThan(1024);
+    expect(resultWith9).toBeLessThanOrEqual(100); // Should be a percentage
   });
 
-  it("should handle coverings left of 1 (single offspring)", () => {
-    const parent1: ChocoboParentDataParsed = {
+  it("should return higher quality for perfect stats than mixed stats", () => {
+    const perfectParent1: ChocoboParentDataParsed = {
       gender: "male",
-      coveringsLeft: 1,
+      coveringsLeft: 9,
       fatherMaxSpeed: 5,
       fatherAcceleration: 5,
       fatherEndurance: 5,
@@ -268,9 +266,9 @@ describe("evaluateBreedingPair", () => {
       motherCunning: 5,
     };
 
-    const parent2: ChocoboParentDataParsed = {
+    const perfectParent2: ChocoboParentDataParsed = {
       gender: "female",
-      coveringsLeft: 1,
+      coveringsLeft: 9,
       fatherMaxSpeed: 5,
       fatherAcceleration: 5,
       fatherEndurance: 5,
@@ -283,14 +281,7 @@ describe("evaluateBreedingPair", () => {
       motherCunning: 5,
     };
 
-    const result = evaluateBreedingPair(parent1, parent2, false);
-
-    // With perfect stats, single offspring should have expected rank of 511.5 (middle of 0-1023)
-    expect(result).toBeCloseTo(511.5, 1);
-  });
-
-  it("should use minimum coverings between both parents", () => {
-    const parent1: ChocoboParentDataParsed = {
+    const mixedParent1: ChocoboParentDataParsed = {
       gender: "male",
       coveringsLeft: 9,
       fatherMaxSpeed: 3,
@@ -305,9 +296,9 @@ describe("evaluateBreedingPair", () => {
       motherCunning: 3,
     };
 
-    const parent2: ChocoboParentDataParsed = {
+    const mixedParent2: ChocoboParentDataParsed = {
       gender: "female",
-      coveringsLeft: 2,
+      coveringsLeft: 9,
       fatherMaxSpeed: 3,
       fatherAcceleration: 3,
       fatherEndurance: 3,
@@ -320,65 +311,20 @@ describe("evaluateBreedingPair", () => {
       motherCunning: 3,
     };
 
-    const resultWith2 = evaluateBreedingPair(parent1, parent2, false);
+    const perfectResult = evaluateBreedingPair(perfectParent1, perfectParent2, false);
+    const mixedResult = evaluateBreedingPair(mixedParent1, mixedParent2, false);
 
-    // Now swap and test - should get same result
-    parent1.coveringsLeft = 2;
-    parent2.coveringsLeft = 9;
-    const resultSwapped = evaluateBreedingPair(parent1, parent2, false);
-
-    expect(resultWith2).toBe(resultSwapped);
+    // Perfect stats should produce higher expected quality
+    expect(perfectResult).toBeGreaterThan(mixedResult);
+    // Perfect pair should be close to 100%
+    expect(perfectResult).toBeGreaterThan(95);
+    expect(perfectResult).toBeLessThanOrEqual(100);
   });
 
-  it("should show progressive improvement from 1 to 9 coverings", () => {
+  it("should differentiate between regular and super sprint modes", () => {
     const parent1: ChocoboParentDataParsed = {
       gender: "male",
-      coveringsLeft: 1,
-      fatherMaxSpeed: 4,
-      fatherAcceleration: 4,
-      fatherEndurance: 4,
-      fatherStamina: 4,
-      fatherCunning: 4,
-      motherMaxSpeed: 4,
-      motherAcceleration: 4,
-      motherEndurance: 4,
-      motherStamina: 4,
-      motherCunning: 4,
-    };
-
-    const parent2: ChocoboParentDataParsed = {
-      gender: "female",
-      coveringsLeft: 1,
-      fatherMaxSpeed: 4,
-      fatherAcceleration: 4,
-      fatherEndurance: 4,
-      fatherStamina: 4,
-      fatherCunning: 4,
-      motherMaxSpeed: 4,
-      motherAcceleration: 4,
-      motherEndurance: 4,
-      motherStamina: 4,
-      motherCunning: 4,
-    };
-
-    const results: number[] = [];
-    
-    for (let coverings = 1; coverings <= 9; coverings++) {
-      parent1.coveringsLeft = coverings;
-      parent2.coveringsLeft = coverings;
-      results.push(evaluateBreedingPair(parent1, parent2, false));
-    }
-
-    // Expected rank should increase with more coverings
-    for (let i = 1; i < results.length; i++) {
-      expect(results[i]).toBeGreaterThan(results[i - 1]);
-    }
-  });
-
-  it("should work with super sprint mode and limited coverings", () => {
-    const parent1: ChocoboParentDataParsed = {
-      gender: "male",
-      coveringsLeft: 3,
+      coveringsLeft: 9,
       fatherMaxSpeed: 5,
       fatherAcceleration: 2,
       fatherEndurance: 5,
@@ -393,7 +339,7 @@ describe("evaluateBreedingPair", () => {
 
     const parent2: ChocoboParentDataParsed = {
       gender: "female",
-      coveringsLeft: 3,
+      coveringsLeft: 9,
       fatherMaxSpeed: 4,
       fatherAcceleration: 2,
       fatherEndurance: 5,
@@ -409,56 +355,18 @@ describe("evaluateBreedingPair", () => {
     const regularMode = evaluateBreedingPair(parent1, parent2, false);
     const superSprintMode = evaluateBreedingPair(parent1, parent2, true);
 
-    // Both should return valid ranks
+    // Both should return valid quality percentages
     expect(regularMode).toBeGreaterThan(0);
-    expect(regularMode).toBeLessThan(1024);
+    expect(regularMode).toBeLessThanOrEqual(100);
     expect(superSprintMode).toBeGreaterThan(0);
-    expect(superSprintMode).toBeLessThan(1024);
+    expect(superSprintMode).toBeLessThanOrEqual(100);
     
-    // The ranks may differ based on optimization criteria
+    // The scores may differ based on optimization criteria
     // Super sprint prioritizes stamina + endurance
     // Regular mode prioritizes max speed + stamina
   });
 
-  it("should handle edge case with 0 coverings left", () => {
-    const parent1: ChocoboParentDataParsed = {
-      gender: "male",
-      coveringsLeft: 0,
-      fatherMaxSpeed: 5,
-      fatherAcceleration: 5,
-      fatherEndurance: 5,
-      fatherStamina: 5,
-      fatherCunning: 5,
-      motherMaxSpeed: 5,
-      motherAcceleration: 5,
-      motherEndurance: 5,
-      motherStamina: 5,
-      motherCunning: 5,
-    };
-
-    const parent2: ChocoboParentDataParsed = {
-      gender: "female",
-      coveringsLeft: 9,
-      fatherMaxSpeed: 5,
-      fatherAcceleration: 5,
-      fatherEndurance: 5,
-      fatherStamina: 5,
-      fatherCunning: 5,
-      motherMaxSpeed: 5,
-      motherAcceleration: 5,
-      motherEndurance: 5,
-      motherStamina: 5,
-      motherCunning: 5,
-    };
-
-    // Should use minimum (0), which will be treated as 0^9 = 0 for all probabilities
-    const result = evaluateBreedingPair(parent1, parent2, false);
-    
-    // With 0 coverings, the result should be 0 (no offspring possible)
-    expect(result).toBe(0);
-  });
-
-  it("should evaluate different breeding pairs with limited coverings", () => {
+  it("should evaluate different breeding pairs correctly", () => {
     const parent1: ChocoboParentDataParsed = {
       gender: "male",
       coveringsLeft: 5,
@@ -491,9 +399,8 @@ describe("evaluateBreedingPair", () => {
 
     const result = evaluateBreedingPair(parent1, parent2, false);
 
-    // Should return a valid rank
+    // Should return a valid quality percentage
     expect(result).toBeGreaterThan(0);
-    expect(result).toBeLessThan(1024);
+    expect(result).toBeLessThanOrEqual(100);
   });
 });
-

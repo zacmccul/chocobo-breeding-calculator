@@ -83,9 +83,9 @@ export const ChocoboAbilitySchema = z.enum([
 export type ChocoboAbility = z.infer<typeof ChocoboAbilitySchema>;
 
 /**
- * Schema for a single stat value (1-5 stars)
+ * Schema for a single stat value (1-4 stars)
  */
-export const StatValueSchema = z.number().int().min(1).max(5);
+export const StatValueSchema = z.number().int().min(1).max(4);
 
 /**
  * Schema for chocobo stats with both parent stats (blue/red)
@@ -197,38 +197,38 @@ export function calculateChocoboQuality(chocobo: Chocobo): number {
 }
 
 /**
- * Count the number of locked stats (both father and mother have 5 stars)
+ * Count the number of locked stats (both father and mother have 4 stars)
  */
 export function countLockedStats(chocobo: Chocobo): number {
   const stats = chocobo.stats;
   let locked = 0;
   
-  if (stats.fatherMaxSpeed === 5 && stats.motherMaxSpeed === 5) locked++;
-  if (stats.fatherAcceleration === 5 && stats.motherAcceleration === 5) locked++;
-  if (stats.fatherEndurance === 5 && stats.motherEndurance === 5) locked++;
-  if (stats.fatherStamina === 5 && stats.motherStamina === 5) locked++;
-  if (stats.fatherCunning === 5 && stats.motherCunning === 5) locked++;
+  if (stats.fatherMaxSpeed === 4 && stats.motherMaxSpeed === 4) locked++;
+  if (stats.fatherAcceleration === 4 && stats.motherAcceleration === 4) locked++;
+  if (stats.fatherEndurance === 4 && stats.motherEndurance === 4) locked++;
+  if (stats.fatherStamina === 4 && stats.motherStamina === 4) locked++;
+  if (stats.fatherCunning === 4 && stats.motherCunning === 4) locked++;
   
   return locked;
 }
 
 /**
- * Count the total number of stats with 5 stars (father or mother)
+ * Count the total number of stats with 4 stars (father or mother)
  */
-export function countFiveStarStats(chocobo: Chocobo): number {
+export function countFourStarStats(chocobo: Chocobo): number {
   const stats = chocobo.stats;
   let count = 0;
   
-  if (stats.fatherMaxSpeed === 5) count++;
-  if (stats.fatherAcceleration === 5) count++;
-  if (stats.fatherEndurance === 5) count++;
-  if (stats.fatherStamina === 5) count++;
-  if (stats.fatherCunning === 5) count++;
-  if (stats.motherMaxSpeed === 5) count++;
-  if (stats.motherAcceleration === 5) count++;
-  if (stats.motherEndurance === 5) count++;
-  if (stats.motherStamina === 5) count++;
-  if (stats.motherCunning === 5) count++;
+  if (stats.fatherMaxSpeed === 4) count++;
+  if (stats.fatherAcceleration === 4) count++;
+  if (stats.fatherEndurance === 4) count++;
+  if (stats.fatherStamina === 4) count++;
+  if (stats.fatherCunning === 4) count++;
+  if (stats.motherMaxSpeed === 4) count++;
+  if (stats.motherAcceleration === 4) count++;
+  if (stats.motherEndurance === 4) count++;
+  if (stats.motherStamina === 4) count++;
+  if (stats.motherCunning === 4) count++;
   
   return count;
 }
@@ -245,4 +245,30 @@ export function validateChocobo(data: unknown): Chocobo {
  */
 export function validateExport(data: unknown): ChocoboExport {
   return ChocoboExportSchema.parse(data);
+}
+
+/**
+ * Migrate and cap stats at 4 for legacy data that may have 5-star stats.
+ * Returns the migrated chocobo and whether any changes were made.
+ */
+export function migrateChocoboStats(chocobo: Chocobo): { chocobo: Chocobo; hadChanges: boolean } {
+  let hadChanges = false;
+  const stats = { ...chocobo.stats };
+  
+  // Cap all stats at 4
+  if (stats.fatherMaxSpeed > 4) { stats.fatherMaxSpeed = 4; hadChanges = true; }
+  if (stats.fatherAcceleration > 4) { stats.fatherAcceleration = 4; hadChanges = true; }
+  if (stats.fatherEndurance > 4) { stats.fatherEndurance = 4; hadChanges = true; }
+  if (stats.fatherStamina > 4) { stats.fatherStamina = 4; hadChanges = true; }
+  if (stats.fatherCunning > 4) { stats.fatherCunning = 4; hadChanges = true; }
+  if (stats.motherMaxSpeed > 4) { stats.motherMaxSpeed = 4; hadChanges = true; }
+  if (stats.motherAcceleration > 4) { stats.motherAcceleration = 4; hadChanges = true; }
+  if (stats.motherEndurance > 4) { stats.motherEndurance = 4; hadChanges = true; }
+  if (stats.motherStamina > 4) { stats.motherStamina = 4; hadChanges = true; }
+  if (stats.motherCunning > 4) { stats.motherCunning = 4; hadChanges = true; }
+  
+  return {
+    chocobo: hadChanges ? { ...chocobo, stats, updatedAt: new Date().toISOString() } : chocobo,
+    hadChanges
+  };
 }

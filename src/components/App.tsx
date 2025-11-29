@@ -14,7 +14,7 @@ import { ChocoboList } from "./ChocoboList";
 import { SortControls } from "./SortControls";
 import { FilterControls } from "./FilterControls";
 import { InfoModal } from "./InfoModal";
-import { Toaster } from "../ui/toaster";
+import { Toaster, toaster } from "../ui/toaster";
 import { useChocoboStore } from "../store/chocoboStore";
 
 export const App: React.FC = () => {
@@ -75,12 +75,30 @@ export const App: React.FC = () => {
 
       try {
         const text = await file.text();
-        importData(text);
-        alert("Data imported successfully!");
+        const hadMigration = importData(text);
+        
+        if (hadMigration) {
+          toaster.create({
+            title: "Data Imported with Migration",
+            description: "Your data has been imported successfully. Some stats were capped at 4 stars (the maximum allowed).",
+            type: "warning",
+            duration: 6000,
+          });
+        } else {
+          toaster.create({
+            title: "Data Imported",
+            description: "Your chocobo data has been imported successfully!",
+            type: "success",
+            duration: 4000,
+          });
+        }
       } catch (error) {
-        alert(
-          `Failed to import data: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
+        toaster.create({
+          title: "Import Failed",
+          description: `Failed to import data: ${error instanceof Error ? error.message : "Unknown error"}`,
+          type: "error",
+          duration: 6000,
+        });
       }
     };
     input.click();

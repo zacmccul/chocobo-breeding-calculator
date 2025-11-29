@@ -25,6 +25,11 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
     <Box>
       <Heading size="md" mb={3} color={color}>
         {title}
+        {chocobo.name && (
+          <Text as="span" fontSize="md" fontWeight="normal" ml={2}>
+            ({chocobo.name})
+          </Text>
+        )}
       </Heading>
 
       <VStack align="stretch" gap={2}>
@@ -37,36 +42,36 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
             <HStack justify="space-between">
               <Text>Max Speed:</Text>
               <Text fontWeight="bold" color="blue.600">
-                {"★".repeat(chocobo.stats.fatherMaxSpeed)}
-                {"☆".repeat(5 - chocobo.stats.fatherMaxSpeed)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.fatherMaxSpeed)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.fatherMaxSpeed))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Acceleration:</Text>
               <Text fontWeight="bold" color="blue.600">
-                {"★".repeat(chocobo.stats.fatherAcceleration)}
-                {"☆".repeat(5 - chocobo.stats.fatherAcceleration)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.fatherAcceleration)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.fatherAcceleration))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Endurance:</Text>
               <Text fontWeight="bold" color="blue.600">
-                {"★".repeat(chocobo.stats.fatherEndurance)}
-                {"☆".repeat(5 - chocobo.stats.fatherEndurance)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.fatherEndurance)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.fatherEndurance))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Stamina:</Text>
               <Text fontWeight="bold" color="blue.600">
-                {"★".repeat(chocobo.stats.fatherStamina)}
-                {"☆".repeat(5 - chocobo.stats.fatherStamina)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.fatherStamina)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.fatherStamina))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Cunning:</Text>
               <Text fontWeight="bold" color="blue.600">
-                {"★".repeat(chocobo.stats.fatherCunning)}
-                {"☆".repeat(5 - chocobo.stats.fatherCunning)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.fatherCunning)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.fatherCunning))))}
               </Text>
             </HStack>
           </VStack>
@@ -81,36 +86,36 @@ const ChocoboStatsDisplay: React.FC<{ chocobo: Chocobo; title: string; color: st
             <HStack justify="space-between">
               <Text>Max Speed:</Text>
               <Text fontWeight="bold" color="red.600">
-                {"★".repeat(chocobo.stats.motherMaxSpeed)}
-                {"☆".repeat(5 - chocobo.stats.motherMaxSpeed)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.motherMaxSpeed)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.motherMaxSpeed))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Acceleration:</Text>
               <Text fontWeight="bold" color="red.600">
-                {"★".repeat(chocobo.stats.motherAcceleration)}
-                {"☆".repeat(5 - chocobo.stats.motherAcceleration)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.motherAcceleration)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.motherAcceleration))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Endurance:</Text>
               <Text fontWeight="bold" color="red.600">
-                {"★".repeat(chocobo.stats.motherEndurance)}
-                {"☆".repeat(5 - chocobo.stats.motherEndurance)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.motherEndurance)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.motherEndurance))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Stamina:</Text>
               <Text fontWeight="bold" color="red.600">
-                {"★".repeat(chocobo.stats.motherStamina)}
-                {"☆".repeat(5 - chocobo.stats.motherStamina)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.motherStamina)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.motherStamina))))}
               </Text>
             </HStack>
             <HStack justify="space-between">
               <Text>Cunning:</Text>
               <Text fontWeight="bold" color="red.600">
-                {"★".repeat(chocobo.stats.motherCunning)}
-                {"☆".repeat(5 - chocobo.stats.motherCunning)}
+                {"★".repeat(Math.max(0, Math.min(4, chocobo.stats.motherCunning)))}
+                {"☆".repeat(Math.max(0, 4 - Math.max(0, Math.min(4, chocobo.stats.motherCunning))))}
               </Text>
             </HStack>
           </VStack>
@@ -181,7 +186,7 @@ export const OptimalPair: React.FC = () => {
                   Best Pairing Found!
                 </Heading>
                 <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                  Score: {optimalPair.score.toFixed(2)}
+                  Quality: {optimalPair.score.toFixed(2)}%
                 </Text>
               </Box>
 

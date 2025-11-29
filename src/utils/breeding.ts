@@ -45,9 +45,9 @@ export interface ChocoboParentDataParsed {
 }
 
 /**
- * Orders two chocobos by the following criteria, using each sucessive tiebreaker:
- *   1. The most number of stats that contain at least 1 5 star.
- *   2. The most number of stats that are locked, i.e. contain only 5 stars.
+ * Orders two chocobos by the following criteria, using each successive tiebreaker:
+ *   1. The most number of stats that contain at least 1 four-star.
+ *   2. The most number of stats that are locked, i.e. contain only 4 stars.
  *   3. If not superSprint, Maximize the following equality: Max Speed + Stamina - Cunning - Acceleration, followed by tiebreaker on maxing endurance.
  *   4. If superSprint, Maximize the following equality: Stamina + Endurance - Cunning - Acceleration, followed by tiebreaker on maxing max speed.
  *  
@@ -67,20 +67,20 @@ export function orderChocobo(a: ChocoboParentDataParsed, b: ChocoboParentDataPar
   const statsA = getStats(a);
   const statsB = getStats(b);
 
-  // Criterion 1: Count stats that contain at least one 5
-  const countWithFive = (stats: number[][]) => 
-    stats.filter(([father, mother]) => father === 5 || mother === 5).length;
+  // Criterion 1: Count stats that contain at least one 4
+  const countWithFour = (stats: number[][]) => 
+    stats.filter(([father, mother]) => father === 4 || mother === 4).length;
   
-  const aWithFive = countWithFive(statsA);
-  const bWithFive = countWithFive(statsB);
+  const aWithFour = countWithFour(statsA);
+  const bWithFour = countWithFour(statsB);
   
-  if (aWithFive !== bWithFive) {
-    return bWithFive - aWithFive; // More 5s is better, so b > a means negative (b comes first)
+  if (aWithFour !== bWithFour) {
+    return bWithFour - aWithFour; // More 4s is better, so b > a means negative (b comes first)
   }
 
-  // Criterion 2: Count locked stats (both father and mother are 5)
+  // Criterion 2: Count locked stats (both father and mother are 4)
   const countLocked = (stats: number[][]) => 
-    stats.filter(([father, mother]) => father === 5 && mother === 5).length;
+    stats.filter(([father, mother]) => father === 4 && mother === 4).length;
   
   const aLocked = countLocked(statsA);
   const bLocked = countLocked(statsB);
@@ -147,7 +147,7 @@ export interface StatPotential {
   best: number;      // Best possible value from both parents
   worst: number;     // Worst possible value from both parents
   average: number;   // Average of all possible combinations
-  hasPerfect: boolean; // True if both parent values are max (4 or 5)
+  hasPerfect: boolean; // True if both parent values are max (4)
 }
 
 /**
@@ -168,15 +168,15 @@ export function evaluateStatPotential(
   const worst = Math.min(...possibleValues);
   const average = possibleValues.reduce((a, b) => a + b, 0) / possibleValues.length;
   
-  // Perfect inheritance: all four grandparent stats are 5
-  const hasPerfect = possibleValues.every(v => v === 5);
+  // Perfect inheritance: all four grandparent stats are 4
+  const hasPerfect = possibleValues.every(v => v === 4);
 
   return { best, worst, average, hasPerfect };
 }
 
 /**
  * Calculate overall breeding quality score for a pair.
- * Higher score = better breeding potential toward all 5-star offspring.
+ * Higher score = better breeding potential toward all 4-star offspring.
  */
 export function calculateBreedingScore(
   male: ChocoboParentData,
@@ -206,19 +206,19 @@ export function calculateBreedingScore(
     );
 
     // Scoring criteria:
-    // 1. Perfect stats (all 4/5) are most valuable: +100 points
+    // 1. Perfect stats (all 4) are most valuable: +100 points
     // 2. Best possible outcome: +20 * best value
     // 3. Average potential: +10 * average
-    // 4. Penalty for worst case: -5 * (5 - worst)
+    // 4. Penalty for worst case: -5 * (4 - worst)
     
     let statScore = 0;
     
     if (potential.hasPerfect) {
-      statScore += 100; // Guaranteed 5-star inheritance
+      statScore += 100; // Guaranteed 4-star inheritance
     } else {
       statScore += potential.best * 20;     // Reward high ceiling
       statScore += potential.average * 10;   // Reward good average
-      statScore -= (5 - potential.worst) * 5; // Penalize low floor
+      statScore -= (4 - potential.worst) * 5; // Penalize low floor
     }
 
     totalScore += statScore;
@@ -316,105 +316,77 @@ function cartesianProduct<T>(...arrays: T[][]): T[][] {
 }
 
 /**
- * Represents a chocobo genotype with father and mother genes for each stat
+ * Calculate the maximum possible quality score for a perfect chocobo.
+ * This represents a chocobo with all stats at [4, 4].
  */
-interface ChocoboGenotype {
-  stats: Array<[number, number]>; // [father gene, mother gene] for each of 5 stats
+function calculateMaxPossibleScore(superSprint: boolean = false): number {
+  // Perfect stats: all 4s
+  const perfectStats: Array<[number, number]> = [
+    [4, 4], [4, 4], [4, 4], [4, 4], [4, 4]
+  ];
+  return calculateChocoboQualityScore(perfectStats, superSprint);
 }
 
 /**
- * Create a comparator function for sorting chocobos by quality
+ * Calculate a numeric quality score for a chocobo based on its stats.
+ * Higher score = better chocobo according to our ordering criteria.
+ * 
+ * This converts our multi-criteria ordering into a single comparable number.
  */
-function createChocoboComparator(superSprint: boolean = false) {
-  return (a: ChocoboGenotype, b: ChocoboGenotype): number => {
-    const statsA = a.stats;
-    const statsB = b.stats;
-
-    // Criterion 1: Count stats that contain at least one 5
-    const countWithFive = (stats: Array<[number, number]>) => 
-      stats.filter(([father, mother]) => father === 5 || mother === 5).length;
-    
-    const aWithFive = countWithFive(statsA);
-    const bWithFive = countWithFive(statsB);
-    
-    if (aWithFive !== bWithFive) {
-      return aWithFive - bWithFive; // Ascending sort (worst to best)
-    }
-
-    // Criterion 2: Count locked stats (both father and mother are 5)
-    const countLocked = (stats: Array<[number, number]>) => 
-      stats.filter(([father, mother]) => father === 5 && mother === 5).length;
-    
-    const aLocked = countLocked(statsA);
-    const bLocked = countLocked(statsB);
-    
-    if (aLocked !== bLocked) {
-      return aLocked - bLocked; // Ascending sort
-    }
-
-    // Get individual stat averages
-    const getStatAvg = (stats: Array<[number, number]>, index: number) => {
-      const [father, mother] = stats[index];
-      return (father + mother) / 2;
-    };
-
-    // Stat indices: 0=MaxSpeed, 1=Acceleration, 2=Endurance, 3=Stamina, 4=Cunning
-    if (!superSprint) {
-      // Criterion 3: Max Speed + Stamina - Cunning - Acceleration
-      const calcFormula3 = (stats: Array<[number, number]>) => 
-        getStatAvg(stats, 0) + 
-        getStatAvg(stats, 3) - 
-        getStatAvg(stats, 4) - 
-        getStatAvg(stats, 1);
-      
-      const aFormula = calcFormula3(statsA);
-      const bFormula = calcFormula3(statsB);
-      
-      if (aFormula !== bFormula) {
-        return aFormula - bFormula; // Ascending sort
-      }
-      
-      // Tiebreaker: max endurance
-      const aEndurance = getStatAvg(statsA, 2);
-      const bEndurance = getStatAvg(statsB, 2);
-      
-      return aEndurance - bEndurance; // Ascending sort
-    } else {
-      // Criterion 4: Stamina + Endurance - Cunning - Acceleration
-      const calcFormula4 = (stats: Array<[number, number]>) => 
-        getStatAvg(stats, 3) + 
-        getStatAvg(stats, 2) - 
-        getStatAvg(stats, 4) - 
-        getStatAvg(stats, 1);
-      
-      const aFormula = calcFormula4(statsA);
-      const bFormula = calcFormula4(statsB);
-      
-      if (aFormula !== bFormula) {
-        return aFormula - bFormula; // Ascending sort
-      }
-      
-      // Tiebreaker: max speed
-      const aMaxSpeed = getStatAvg(statsA, 0);
-      const bMaxSpeed = getStatAvg(statsB, 0);
-      
-      return aMaxSpeed - bMaxSpeed; // Ascending sort
-    }
+function calculateChocoboQualityScore(stats: Array<[number, number]>, superSprint: boolean = false): number {
+  // Criterion 1: Count stats that contain at least one 4 (most important)
+  const countWithFour = stats.filter(([father, mother]) => father === 4 || mother === 4).length;
+  
+  // Criterion 2: Count locked stats (both father and mother are 4)
+  const countLocked = stats.filter(([father, mother]) => father === 4 && mother === 4).length;
+  
+  // Get individual stat averages
+  const getStatAvg = (index: number) => {
+    const [father, mother] = stats[index];
+    return (father + mother) / 2;
   };
+  
+  // Stat indices: 0=MaxSpeed, 1=Acceleration, 2=Endurance, 3=Stamina, 4=Cunning
+  let formula: number;
+  let tiebreaker: number;
+  
+  if (!superSprint) {
+    // Criterion 3: Max Speed + Stamina - Cunning - Acceleration
+    formula = getStatAvg(0) + getStatAvg(3) - getStatAvg(4) - getStatAvg(1);
+    // Tiebreaker: max endurance
+    tiebreaker = getStatAvg(2);
+  } else {
+    // Criterion 4: Stamina + Endurance - Cunning - Acceleration
+    formula = getStatAvg(3) + getStatAvg(2) - getStatAvg(4) - getStatAvg(1);
+    // Tiebreaker: max speed
+    tiebreaker = getStatAvg(0);
+  }
+  
+  // Combine all criteria into a single score using weighted sum
+  // Weight the criteria so earlier ones dominate:
+  // - countWithFour: weight 1,000,000 (dominates everything)
+  // - countLocked: weight 10,000 (second priority)
+  // - formula: weight 100 (third priority, range roughly -10 to +10)
+  // - tiebreaker: weight 1 (final tiebreaker, range 0.5 to 4)
+  
+  return Math.max(0, countWithFour * 1000000 + countLocked * 10000 + formula * 100 + tiebreaker);
 }
 
 /**
- * Evaluate a breeding pair and return the expected rank (0-1023) of the best child out of 9 siblings.
+ * Evaluate a breeding pair and return the expected quality as a percentage of perfect.
  * 
  * This function:
  * 1. Generates all 1024 possible offspring genotypes (4^5 combinations)
- * 2. Sorts them by quality using the chocobo comparator
- * 3. Calculates the expected value of the best offspring from 9 random siblings
+ * 2. Calculates the quality score for each possible offspring
+ * 3. Returns the average quality as a percentage of the maximum possible score
+ * 
+ * The quality score is based on our ordering criteria, with higher percentages indicating
+ * better chocobos that will rank higher in competitions.
  * 
  * @param parent1 - First parent's stats as [father, mother] pairs for each stat
  * @param parent2 - Second parent's stats as [father, mother] pairs for each stat
  * @param superSprint - Whether to optimize for Super Sprint mode
- * @returns Expected rank (0-1023) where higher is better
+ * @returns Expected quality percentage (0-100, higher is better)
  */
 export function evaluateBreedingPair(
   parent1: ChocoboParentDataParsed,
@@ -459,36 +431,22 @@ export function evaluateBreedingPair(
   // Cartesian product of all stats (4*4*4*4*4 = 1024 genotypes)
   const allGenotypeCombos = cartesianProduct<[number, number]>(...statOptions);
   
-  // Convert to ChocoboGenotype objects
-  const children: ChocoboGenotype[] = allGenotypeCombos.map(statArray => ({
-    stats: statArray
-  }));
+  // B. Calculate quality score for each possible offspring
+  let totalQuality = 0;
   
-  // B. Sort the Universe (ascending: worst -> best)
-  children.sort(createChocoboComparator(superSprint));
-  
-  // C. Calculate Expected Value of the Winner (Best of 9)
-  // The "Value" of a child is its index (rank) in this sorted list (0 to 1023)
-  // EV = Sum( Index * Prob(Winner == Index) )
-  
-  let expectedRankSum = 0;
-  const totalSpace = 1024.0;
-  const siblings = Math.min(9, parent1.coveringsLeft, parent2.coveringsLeft);
-  
-  for (let i = 0; i < 1024; i++) {
-    const rankValue = i;
-    
-    // Prob that a single random child is rank <= i
-    const cdfCurrent = (i + 1) / totalSpace;
-    // Prob that a single random child is rank <= i-1
-    const cdfPrev = i / totalSpace;
-    
-    // Prob that the MAX of 9 children is exactly rank i
-    // P(Max=i) = F(i)^9 - F(i-1)^9
-    const probIsWinner = Math.pow(cdfCurrent, siblings) - Math.pow(cdfPrev, siblings);
-    
-    expectedRankSum += rankValue * probIsWinner;
+  for (const statArray of allGenotypeCombos) {
+    const quality = calculateChocoboQualityScore(statArray, superSprint);
+    totalQuality += quality;
   }
   
-  return expectedRankSum;
+  // C. Calculate the average expected quality
+  // This represents the expected quality of a random offspring from this pairing
+  const expectedQuality = totalQuality / allGenotypeCombos.length;
+  
+  // D. Convert to percentage of maximum possible score
+  const maxScore = calculateMaxPossibleScore(superSprint);
+  const percentageScore = (expectedQuality / maxScore) * 100;
+  
+  return percentageScore;
+
 }

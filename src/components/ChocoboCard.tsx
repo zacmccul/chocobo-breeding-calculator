@@ -27,7 +27,8 @@ const StatInput: React.FC<{
   color: string;
   disabled?: boolean;
 }> = ({ label, value, onChange, color, disabled = false }) => {
-  const stars = "★".repeat(value) + "☆".repeat(5 - value);
+  const clampedValue = Math.max(0, Math.min(4, value));
+  const stars = "★".repeat(clampedValue) + "☆".repeat(Math.max(0, 4 - clampedValue));
 
   return (
     <HStack gap={2} width="full">
@@ -37,11 +38,11 @@ const StatInput: React.FC<{
       <Input
         type="number"
         min={1}
-        max={5}
+        max={4}
         value={value}
         onChange={(e) => {
           const val = parseInt(e.target.value);
-          if (!isNaN(val) && val >= 1 && val <= 5) {
+          if (!isNaN(val) && val >= 1 && val <= 4) {
             onChange(val);
           }
         }}

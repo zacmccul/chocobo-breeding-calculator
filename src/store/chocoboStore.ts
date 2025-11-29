@@ -7,7 +7,8 @@ import {
   validateExport,
   calculateChocoboQuality,
   countLockedStats,
-  countFiveStarStats,
+  countFourStarStats,
+  migrateChocoboStats,
 } from "../schemas/chocobo";
 import { evaluateBreedingPair } from "../utils/breeding";
 import type { ChocoboParentDataParsed } from "../utils/breeding";
@@ -83,7 +84,7 @@ interface ChocoboStore {
   clearOptimalPair: () => void;
   breedOptimalPair: () => void;
   exportData: () => string;
-  importData: (jsonString: string) => void;
+  importData: (jsonString: string) => boolean;
   addStatFilter: (filter: Omit<StatFilter, "id">) => void;
   removeStatFilter: (id: string) => void;
   clearAllFilters: () => void;
@@ -137,8 +138,8 @@ function sortChocobos(chocobos: Chocobo[], sortType: SortType, sortOrder: SortOr
         valueB = countLockedStats(b);
         break;
       case "fiveStars":
-        valueA = countFiveStarStats(a);
-        valueB = countFiveStarStats(b);
+        valueA = countFourStarStats(a);
+        valueB = countFourStarStats(b);
         break;
       default:
         valueA = calculateChocoboQuality(a);
@@ -230,20 +231,29 @@ export const useChocoboStore = create<ChocoboStore>()(
       },
 
       findOptimalBreedingPair: () => {
+        console.log('🐤 [Breeding] Starting optimal pair calculation...');
+        
         const chocobos = get().getFilteredChocobos();
+        console.log(`🐤 [Breeding] Filtered chocobos: ${chocobos.length} total`);
         
         // Separate males and females
         const males = chocobos.filter(c => c.gender === "male");
         const females = chocobos.filter(c => c.gender === "female");
         
+        console.log(`🐤 [Breeding] Males: ${males.length}, Females: ${females.length}`);
+        
         // Need at least one male and one female
         if (males.length === 0 || females.length === 0) {
+          console.log('🐤 [Breeding] ❌ Not enough chocobos to breed (need at least 1 male and 1 female)');
           set({ optimalPair: null });
           return;
         }
         
         let bestPair: { father: Chocobo; mother: Chocobo; score: number } | null = null;
         let bestScore = -Infinity;
+        
+        console.log(`🐤 [Breeding] Evaluating ${males.length * females.length} possible pairings...`);
+        console.log(`🐤 [Breeding] Super Sprint mode: ${get().superSprint}`);
         
         // Evaluate all possible pairings
         for (const male of males) {
@@ -252,8 +262,10 @@ export const useChocoboStore = create<ChocoboStore>()(
           for (const female of females) {
             const femaleData = convertToParentDataParsed(female);
             
-            // Use evaluateBreedingPair to get expected rank score (higher is better)
+            // Use evaluateBreedingPair to get expected quality percentage (higher is better)
             const score = evaluateBreedingPair(maleData, femaleData, get().superSprint);
+            
+            console.log(`🐤 [Breeding] Pair: ${male.name || male.id.slice(0,8)} (M) + ${female.name || female.id.slice(0,8)} (F) = Quality: ${score.toFixed(2)}%`);
             
             if (score > bestScore) {
               bestScore = score;
@@ -264,6 +276,15 @@ export const useChocoboStore = create<ChocoboStore>()(
               };
             }
           }
+        }
+        
+        if (bestPair) {
+          console.log(`🐤 [Breeding] ✅ Best pair found!`);
+          console.log(`🐤 [Breeding] Father: ${bestPair.father.name || bestPair.father.id}`);
+          console.log(`🐤 [Breeding] Mother: ${bestPair.mother.name || bestPair.mother.id}`);
+          console.log(`🐤 [Breeding] Quality: ${bestPair.score.toFixed(2)}%`);
+        } else {
+          console.log('🐤 [Breeding] ❌ No valid pair found');
         }
         
         set({ optimalPair: bestPair });
@@ -322,13 +343,22 @@ export const useChocoboStore = create<ChocoboStore>()(
           const data = JSON.parse(jsonString);
           const validated = validateExport(data);
           
-          // Validate each chocobo individually
-          const validatedChocobos = validated.chocobos.map((c) => validateChocobo(c));
+          // Validate and migrate each chocobo individually
+          let hadAnyChanges = false;
+          const validatedChocobos = validated.chocobos.map((c) => {
+            const validatedChocobo = validateChocobo(c);
+            const { chocobo: migratedChocobo, hadChanges } = migrateChocoboStats(validatedChocobo);
+            if (hadChanges) hadAnyChanges = true;
+            return migratedChocobo;
+          });
 
           set({
             chocobos: validatedChocobos,
             optimalPair: null,
           });
+          
+          // Return whether migration occurred so caller can show toast
+          return hadAnyChanges;
         } catch (error) {
           throw new Error(
             `Failed to import data: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -517,6 +547,33 @@ export const useChocoboStore = create<ChocoboStore>()(
     {
       name: "chocobo-storage",
       version: 1,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Migrate all chocobos in storage to ensure they have valid 4-star max stats
+          let hadLegacyData = false;
+          const migratedChocobos = state.chocobos.map((chocobo) => {
+            const { chocobo: migratedChocobo, hadChanges } = migrateChocoboStats(chocobo);
+            if (hadChanges) {
+              hadLegacyData = true;
+            }
+            return migratedChocobo;
+          });
+          
+          if (hadLegacyData) {
+            state.chocobos = migratedChocobos;
+            
+            // Show toast notification to user
+            import("../ui/toaster").then(({ toaster }) => {
+              toaster.create({
+                title: "Data Migrated",
+                description: "Your saved chocobos had stats above 4 stars and were automatically capped to 4 stars.",
+                type: "warning",
+                duration: 5000,
+              });
+            });
+          }
+        }
+      },
     }
   )
 );
