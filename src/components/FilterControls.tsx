@@ -101,7 +101,7 @@ export const FilterControls: React.FC = () => {
   const [filterType, setFilterType] = useState<FilterType>("stat");
   const [selectedStat, setSelectedStat] = useState<StatName>("maxSpeed");
   const [selectedParent, setSelectedParent] = useState<StatParent>("one");
-  const [selectedStatValue, setSelectedStatValue] = useState<number>(5);
+  const [selectedStatValue, setSelectedStatValue] = useState<number>(4);
   const [selectedGrade, setSelectedGrade] = useState<number>(9);
   const [selectedAbility, setSelectedAbility] = useState<ChocoboAbility | "None">("None");
   const [nameSearchQuery, setNameSearchQuery] = useState<string>("");
@@ -254,7 +254,6 @@ export const FilterControls: React.FC = () => {
                           <option value={2}>2★</option>
                           <option value={3}>3★</option>
                           <option value={4}>4★</option>
-                          <option value={5}>5★</option>
                         </NativeSelectField>
                       </NativeSelectRoot>
                     </HStack>

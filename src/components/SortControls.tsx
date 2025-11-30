@@ -47,8 +47,8 @@ export const SortControls: React.FC = () => {
             borderRadius="md"
           >
             <option value="quality">Quality (Stat Total)</option>
-            <option value="locked">Locked Stats (5★ Blue & Red)</option>
-            <option value="fiveStars">Total 5★ Stats</option>
+            <option value="locked">Locked Stats (4★ Blue & Red)</option>
+            <option value="fiveStars">Total 4★ Stats</option>
           </NativeSelectField>
         </NativeSelectRoot>
 
